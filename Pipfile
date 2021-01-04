@@ -1,0 +1,57 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+# testing ====
+pytest-factoryboy = "*"
+pytest-asyncio = "*"
+pytest = "==6.1.1"
+pytest-mock = "*"
+pytest-cov = "*"
+# python lang server====
+# jedi = "*"
+# python-language-server = {extras = ["all"],version = "*"}
+    # Rope for Completions and renaming
+    # Pyflakes linter to detect various errors
+    # McCabe linter for complexity checking
+    # pycodestyle linter for style checking
+    # pydocstyle linter for docstring style checking (disabled by default)
+    # YAPF for code formatting (preferred over autopep8)
+    # pyls-mypy Mypy type checking for Python 3
+# pyls-mypy="*"
+    # pyls-isort Isort import sort code formatting
+# pyls-isort="*"
+    # pyls-black for code formatting using Black
+# pyls-black=">=0.4.6"
+black = "==20.8b1"
+# pyls-black=">=0.4.6"
+#   - black [required: >=19.3b0, installed: 20.8b1]
+# other python related emacs staff ====
+flake8 = "*"
+autoflake = "*"
+# Install importmagic and epc for importmagic functionality. ===
+epc = "*"
+importmagic = "*"
+ipython = "*"
+# dap-mode debugger (only for lsp backend) ===
+ptvsd = ">=4.2"
+# probably unnecessary python emacs staff ====
+# coverage = "*"
+isort = "*"
+mypy = "*"
+# mock = "==2.*"
+# wily = "==1.12.4"
+# pre-commit = "*"
+
+[packages]
+pydantic = "*"
+websockets = "*"
+SQLAlchemy = "*"
+
+[requires]
+python_version = "3.8"
+
+[pipenv]
+allow_prereleases = true

@@ -1,0 +1,15 @@
+pyproject.toml
+setup.cfg
+setup.py
+src/domain/__init__.py
+src/domain/value_objects.py
+src/domain/entities/__init__.py
+src/domain/entities/customer.py
+src/domain/entities/filter.py
+src/domain/entities/order.py
+src/domain/entities/terminal.py
+src/tradecopier.egg-info/PKG-INFO
+src/tradecopier.egg-info/SOURCES.txt
+src/tradecopier.egg-info/dependency_links.txt
+src/tradecopier.egg-info/top_level.txt
+src/use_case/__init__.py
