@@ -1,12 +1,10 @@
-import itertools
 from uuid import uuid1
 
 import factories
-import pytest
-from domain.entities.terminal import Terminal
-from domain.value_objects import TerminalId
-from infrastructure.repositories.customer_repo import SqlAlchemyCustomerRepo
-from infrastructure.repositories.terminal_repo import SqlAlchemyTerminalRepo
+from tradecopier.infrastructure.repositories.customer_repo import \
+    SqlAlchemyCustomerRepo
+from tradecopier.infrastructure.repositories.terminal_repo import \
+    SqlAlchemyTerminalRepo
 
 
 def test_customer_repo(
@@ -26,7 +24,7 @@ def test_customer_repo(
     cust_id = cust_repo.save(customer)
     customer_from_db = cust_repo.get(cust_id)
     assert customer_from_db == customer
-    customer.sources[0].is_active = False
+    customer.sources[0].enabled = False
     cust_id = cust_repo.save(customer)
     customer_from_db = cust_repo.get(cust_id)
 

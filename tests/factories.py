@@ -2,12 +2,11 @@ from uuid import uuid1
 
 import factory
 import factory.fuzzy
-
-from domain import value_objects as vo
-from domain.entities import message as msg
-from domain.entities.customer import Customer
-from domain.entities.order import Order
-from domain.entities.terminal import Terminal
+from tradecopier.application.domain import value_objects as vo
+from tradecopier.application.domain.entities import message as msg
+from tradecopier.application.domain.entities.customer import Customer
+from tradecopier.application.domain.entities.order import Order
+from tradecopier.application.domain.entities.terminal import Terminal
 
 
 def new_uuid():
@@ -61,9 +60,10 @@ class OrderFactory(factory.Factory):
 class TradeMessageFactory(factory.Factory):
     terminal_id = new_uuid()
     body = factory.SubFactory(OrderFactory)
+    account_id = factory.fuzzy.FuzzyInteger(1, 100)
 
     class Meta:
-        model = msg.TradeMessage
+        model = msg.InTradeMessage
 
 
 class RegIncomingMessageFactory(factory.Factory):

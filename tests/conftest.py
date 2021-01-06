@@ -2,15 +2,18 @@ import asyncio
 
 import pytest
 import websockets as ws
-from infrastructure.adapters.connection_adapter import \
-    WebSocketsConnectionAdapter
-from infrastructure.register_terminal import RegisterPresenter
-from infrastructure.repositories.sql_model import TerminalModel
+# from infrastructure.register_terminal import RegisterPresenter
+# from infrastructure.repositories.sql_model import TerminalModel
 from pytest_factoryboy import register as register_factory
-from use_case.receiving_message import ReceivingMessageUseCase
-from use_case.registering_terminal import RegisterTerminalUseCase
+from tradecopier.application.use_case.receiving_message import \
+    ReceivingMessageUseCase
+from tradecopier.infrastructure.adapters.connection_adapter import \
+    WebSocketsConnectionAdapter
 
 import factories
+
+# from use_case.registering_terminal import RegisterTerminalUseCase
+
 
 register_factory(factories.CustomerFactory)
 register_factory(factories.TerminalFactory)
@@ -39,9 +42,9 @@ def event_loop():
 @pytest.fixture(scope="session")
 def application(event_loop):
     wsca = WebSocketsConnectionAdapter()
-    uc_reg = RegisterTerminalUseCase()
-    rp = RegisterPresenter(uc_reg)
-    uc_rec = ReceivingMessageUseCase(wsca, None, rp)
+    # uc_reg = RegisterTerminalUseCase()
+    # rp = RegisterPresenter(uc_reg)
+    uc_rec = ReceivingMessageUseCase(wsca, None, None, None)
     start_server = wsca.start_server(uc_rec)
     event_loop.run_until_complete(start_server)
     # event_loop.run_forever()

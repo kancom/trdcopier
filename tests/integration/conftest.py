@@ -1,10 +1,9 @@
 import pytest
-from infrastructure.repositories.sql_model import (CustomerModel,
-                                                   TerminalModel,
-                                                   TerminalToCustomerMap)
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable, DropTable
+from tradecopier.infrastructure.repositories.sql_model import (
+    CustomerModel, TerminalModel, TerminalToCustomerMap)
 
 
 @pytest.fixture(scope="session")
@@ -36,7 +35,6 @@ def drop_table_by_model(sql_conn):
 def create_table(create_table_by_model, drop_table_by_model):
     def inner(table_model):
         # try:
-        breakpoint()
         create_table_by_model(table_model)
         # except OperationalError as e:
         #     drop_table_by_model(table_model)

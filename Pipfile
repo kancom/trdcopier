@@ -4,6 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+jedi = "==0.13"
+json-rpc="==1.8.1"
+service_factory="==0.1.6"
 # testing ====
 pytest-factoryboy = "*"
 pytest-asyncio = "*"
@@ -11,7 +14,6 @@ pytest = "==6.1.1"
 pytest-mock = "*"
 pytest-cov = "*"
 # python lang server====
-# jedi = "*"
 # python-language-server = {extras = ["all"],version = "*"}
     # Rope for Completions and renaming
     # Pyflakes linter to detect various errors
