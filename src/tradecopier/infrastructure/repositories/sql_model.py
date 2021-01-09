@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import (Boolean, Column, Enum, ForeignKey, Integer, MetaData,
-                        String, Table)
+from sqlalchemy import (Boolean, Column, Enum, Integer, MetaData, String,
+                        Table)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base
@@ -63,36 +63,37 @@ FilterSetModel = Table(
 TerminalModel = Table(
     "terminal",
     metadata,
-    Column("id", UUID, primary_key=True),
-    Column("customer_id", Integer),
+    Column("terminal_id", UUID, primary_key=True),
     Column("name", String),
-    Column("terminal_type", Enum(TerminalType)),
+    Column("expire_at", DateTime),
+    Column("registered_at", DateTime, default=datetime.now),
+    Column("customer_type", Enum(CustomerType)),
     # Column("filter_set_id", Integer, ForeignKey("filterset.set_id")),
     Column("enabled", Boolean),
 )
 
-TerminalToCustomerMap = Table(
-    "term2cust_map",
+RouterModel = Table(
+    "router",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("mapping_id", Integer),
-    Column("terminal_id", UUID),
-    Column("customer_id", Integer),
+    Column("router_id", Integer, nullable=False),
+    Column("terminal_id", UUID, nullable=False),
+    Column("terminal_type", Enum(TerminalType), nullable=False),
 )
 
-CustomerModel = Table(
-    "customer",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("account_id", String, index=True, unique=True),
-    Column("name", String),
-    Column("expire_at", DateTime),
-    Column("registered_at", DateTime, default=datetime.now),
-    Column("sources_mapping_id", Integer),
-    Column("destinations_mapping_id", Integer),
-    Column("customer_type", Enum(CustomerType)),
-    Column("enabled", Boolean),
-)
+# CustomerModel = Table(
+#     "customer",
+#     metadata,
+#     Column("id", Integer, primary_key=True),
+#     # Column("account_id", String, index=True, unique=True),
+#     Column("name", String),
+#     Column("expire_at", DateTime),
+#     Column("registered_at", DateTime, default=datetime.now),
+#     Column("sources_mapping_id", Integer),
+#     Column("destinations_mapping_id", Integer),
+#     Column("customer_type", Enum(CustomerType)),
+#     Column("enabled", Boolean),
+# )
 
 
 # filters = relationship("FilterSetModel", back_populates="terminal")

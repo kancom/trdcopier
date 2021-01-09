@@ -2,8 +2,6 @@ import asyncio
 
 import pytest
 import websockets as ws
-# from infrastructure.register_terminal import RegisterPresenter
-# from infrastructure.repositories.sql_model import TerminalModel
 from pytest_factoryboy import register as register_factory
 from tradecopier.application.use_case.receiving_message import \
     ReceivingMessageUseCase
@@ -15,7 +13,7 @@ import factories
 # from use_case.registering_terminal import RegisterTerminalUseCase
 
 
-register_factory(factories.CustomerFactory)
+register_factory(factories.RouterFactory)
 register_factory(factories.TerminalFactory)
 register_factory(factories.RegisterMessageFactory)
 register_factory(factories.RegIncomingMessageFactory)

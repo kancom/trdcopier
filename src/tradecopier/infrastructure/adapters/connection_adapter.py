@@ -1,5 +1,6 @@
+import asyncio
 import json
-from typing import Any, Awaitable, Callable, Dict
+from typing import Dict, Iterable, List, Tuple
 
 import websockets as ws
 from tradecopier.application.adapters.connection_adapter import \
@@ -7,8 +8,23 @@ from tradecopier.application.adapters.connection_adapter import \
 from tradecopier.application.domain.entities.message import (IncomingMessage,
                                                              OutgoingMessage)
 from tradecopier.application.domain.value_objects import TerminalId
-from tradecopier.application.use_case.receiving_message import \
-    ReceivingMessageUseCase
+from tradecopier.application.use_case.receiving_message import (
+    ReceivingMessageBoundary, ReceivingMessageUseCase)
+
+
+class ReceivingMessagePresenter(ReceivingMessageBoundary):
+    def __init__(self):
+        self._reply: List[Tuple[Iterable[TerminalId], OutgoingMessage]] = []
+
+    def present(self, reply: List[Tuple[Iterable[TerminalId], OutgoingMessage]]):
+        self._reply = reply
+
+    def __iter__(self):
+        self._iter = iter(self._reply)
+        return self._iter
+
+    def __next__(self):
+        return next(self._iter)
 
 
 class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
@@ -18,13 +34,30 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         self._server: ws.Serve = None
         self._ws_register: Dict[str, ws.WebSocketServerProtocol] = {}
 
-    def _callback(self, uc: ReceivingMessageUseCase):
-        async def consumer_handler(websocket: ws.WebSocketServerProtocol, path: str):
-            async for message in websocket:
-                print(type(message), message, websocket, path)
-                inc_message = IncomingMessage(**json.loads(message))
-                uc.execute(inc_message)
-                self._register_ws(inc_message.message.terminal_id, websocket)
+    def _callback(
+        self, uc: ReceivingMessageUseCase, presenter: ReceivingMessagePresenter
+    ):
+        async def consumer_handler(in_ws: ws.WebSocketServerProtocol, path: str):
+            try:
+                async for message in in_ws:
+                    print(type(message), message, in_ws, path)
+                    inc_message = IncomingMessage(**json.loads(message))
+                    uc.execute(inc_message)
+                    for seq in presenter:
+                        terminals, out_message = seq
+                        for terminal_id in terminals:
+                            out_ws = self._ws_register.get(str(terminal_id))
+                            if (
+                                out_ws is None
+                                and inc_message.message.terminal_id == terminal_id
+                            ):
+                                await in_ws.send(json.dumps(out_message.dict()))
+                            elif out_ws is not None:
+                                await out_ws.send(json.dumps(out_message.dict()))
+                    self._register_ws(inc_message.message.terminal_id, in_ws)
+            except ws.exceptions.ConnectionClosedError as e:
+                del self._ws_register[str(inc_message.message.terminal_id)]
+                raise Exception(str(e)) from e
 
         return consumer_handler
 
@@ -34,10 +67,9 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         self._ws_register[str(terminal_id)] = wsproto
 
     def start_server(
-        self,
-        uc: ReceivingMessageUseCase,
+        self, uc: ReceivingMessageUseCase, presenter: ReceivingMessagePresenter
     ):
-        self._server = ws.serve(self._callback(uc), self._host, self._port)
+        self._server = ws.serve(self._callback(uc, presenter), self._host, self._port)
         return self._server
 
     def disconnect(self, terminal_id: TerminalId):
@@ -45,8 +77,15 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         assert str(terminal_id) in self._ws_register, "not known"
         self._ws_register[str(terminal_id)].close()
 
-    def is_new_connection(self, terminal_id: TerminalId) -> bool:
+    def is_connected(self, terminal_id: TerminalId) -> bool:
         return str(terminal_id) in self._ws_register
 
     def send_message(self, terminal_id: TerminalId, message: OutgoingMessage):
+        async def _send_message(ws, message: OutgoingMessage):
+            await ws.send(json.dumps(message.dict()))
+
         print("send", str(message))
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(
+            _send_message(self._ws_register[str(terminal_id)], message), loop=loop
+        )

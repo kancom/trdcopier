@@ -10,7 +10,7 @@ class ConnectionHandlerAdapter(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def is_new_connection(self, terminal_id: TerminalId) -> bool:
+    def is_connected(self, terminal_id: TerminalId) -> bool:
         pass
 
     @abc.abstractmethod

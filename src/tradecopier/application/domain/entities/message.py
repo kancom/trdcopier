@@ -8,11 +8,15 @@ from tradecopier.application.domain.value_objects import AccountId, TerminalId
 class Message(BaseModel):
     terminal_id: TerminalId
 
+    def dict(self, *args, **kwargs):
+        result = super().dict(*args, **kwargs)
+        result["terminal_id"] = str(self.terminal_id)
+        return result
+
 
 class RegisterMessage(Message):
     name: Optional[str] = None
     is_cyphered: bool = False
-    account_id: AccountId
 
 
 class InTradeMessage(Message):
@@ -22,16 +26,28 @@ class InTradeMessage(Message):
 
 
 class IncomingMessage(BaseModel):
-    message: Union[RegisterMessage, InTradeMessage]
+    message: Union[
+        InTradeMessage,
+        RegisterMessage,
+    ]
 
 
 class AskRegistrationMessage(Message):
     body: str = "register"
 
+    def __hash__(self):
+        return hash(self.body)
+
 
 class OutTradeMessage(Message):
     body: Order
 
+    def __hash__(self):
+        return hash(self.body)
+
 
 class OutgoingMessage(BaseModel):
     message: Union[AskRegistrationMessage, OutTradeMessage]
+
+    def __hash__(self):
+        return hash(self.message)

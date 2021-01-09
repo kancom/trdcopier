@@ -4,9 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-jedi = "==0.13"
-json-rpc="==1.8.1"
-service_factory="==0.1.6"
+jedi = "==0.18"
 # testing ====
 pytest-factoryboy = "*"
 pytest-asyncio = "*"
@@ -36,7 +34,6 @@ autoflake = "*"
 # Install importmagic and epc for importmagic functionality. ===
 epc = "*"
 importmagic = "*"
-ipython = "*"
 # dap-mode debugger (only for lsp backend) ===
 ptvsd = ">=4.2"
 # probably unnecessary python emacs staff ====
@@ -46,6 +43,7 @@ mypy = "*"
 # mock = "==2.*"
 # wily = "==1.12.4"
 # pre-commit = "*"
+py-spy = "*"
 
 [packages]
 pydantic = "*"

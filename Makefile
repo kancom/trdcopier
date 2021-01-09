@@ -16,3 +16,9 @@ test: ## run all tests
 
 test-verbose:
 	$(MAKE) test PYTEST_ARGS='-vv'
+
+dev-run: ## run server app in DEGBU mode
+	pipenv run python src/main.py
+
+e2e-run: ## run server app in DEGBU mode
+	pipenv run python src/e2e_main.py

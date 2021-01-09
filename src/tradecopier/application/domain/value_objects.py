@@ -1,7 +1,7 @@
 from enum import IntEnum, auto
 from uuid import UUID
 
-CustomerId = int
+RouterId = int
 RuleId = int
 TerminalId = UUID
 AccountId = str
@@ -42,11 +42,6 @@ class TypeTime(IntEnum):
     ORDER_TIME_SPECIFIED_DAY = auto()
 
 
-class TerminalType(IntEnum):
-    SOURCE = 0
-    DESTINATION = 1
-
-
 class FilterOperation(IntEnum):
     LT = 0
     LE = auto()
@@ -59,6 +54,11 @@ class FilterOperation(IntEnum):
 class FilterType(IntEnum):
     BLOCK = 0
     ALLOW = 1
+
+
+class TerminalType(IntEnum):
+    SOURCE = 0
+    DESTINATION = 1
 
 
 class CustomerType(IntEnum):

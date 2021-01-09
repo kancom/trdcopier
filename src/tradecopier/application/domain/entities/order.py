@@ -47,3 +47,26 @@ class Order(BaseModel):
     comment: str = ""
     position: Optional[int] = None
     position_by: Optional[int] = None
+
+    def __hash__(self):
+        return hash(
+            (
+                self.action,
+                self.symbol,
+                self.magic,
+                self.order_ticket,
+                self.volume,
+                self.price,
+                self.stoplimit,
+                self.sl,
+                self.tp,
+                self.deviation,
+                self.order_type,
+                self.order_type_filling,
+                self.type_time,
+                self.expiration,
+                self.comment,
+                self.position,
+                self.position_by,
+            )
+        )

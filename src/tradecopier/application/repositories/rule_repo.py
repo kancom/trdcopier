@@ -1,18 +1,16 @@
 import abc
-from typing import Optional
 
-from tradecopier.application.domain.entities.message import IncomingMessage
 from tradecopier.application.domain.entities.rule import Rule
 from tradecopier.application.domain.value_objects import RuleId, TerminalId
 
 
 class RuleRepo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get(self, rule_id: RuleId) -> Optional[Rule]:
+    def get(self, rule_id: RuleId) -> Rule:
         pass
 
     @abc.abstractmethod
-    def get_by_terminal_id(self, terminal_id: TerminalId) -> Optional[Rule]:
+    def get_by_terminal_id(self, terminal_id: TerminalId) -> Rule:
         pass
 
     @abc.abstractmethod

@@ -4,8 +4,9 @@ import factory
 import factory.fuzzy
 from tradecopier.application.domain import value_objects as vo
 from tradecopier.application.domain.entities import message as msg
-from tradecopier.application.domain.entities.customer import Customer
 from tradecopier.application.domain.entities.order import Order
+from tradecopier.application.domain.entities.router import Router
+from tradecopier.application.domain.entities.rule import Rule
 from tradecopier.application.domain.entities.terminal import Terminal
 
 
@@ -13,29 +14,30 @@ def new_uuid():
     return factory.Sequence(lambda x: "d327d84f-3f11-11eb-b357-d4258bbc%04d" % x)
 
 
+class RuleFactory(factory.Factory):
+    class Meta:
+        model = Rule
+
+
 class TerminalFactory(factory.Factory):
     name = factory.Faker("name")
-    id = new_uuid()
-    customer_id = 123
+    terminal_id = new_uuid()
+    registered_at = factory.Faker("date_time_between", start_date="-2y")
 
     class Meta:
         model = Terminal
 
 
-class CustomerFactory(factory.Factory):
-    id = factory.fuzzy.FuzzyInteger(1, 100)
-    account_id = factory.fuzzy.FuzzyInteger(1000, 2345)
-    name = factory.Faker("name")
-    registered_at = factory.Faker("date_time_between", start_date="-2y")
+class RouterFactory(factory.Factory):
+    router_id = factory.fuzzy.FuzzyInteger(1, 100)
 
     class Meta:
-        model = Customer
+        model = Router
 
 
 class RegisterMessageFactory(factory.Factory):
     terminal_id = new_uuid()
     name = factory.Faker("name")
-    account_id = factory.Sequence(lambda x: "%0d" % x)
 
     class Meta:
         model = msg.RegisterMessage
