@@ -41,7 +41,17 @@ def rule_repo(mocker):
     )
 
 
-def test_receiving_message_register_on_new(wsca, router_repo, term_repo, rule_repo):
+@pytest.fixture
+def recv_msg_bnd(mocker):
+    return mocker.patch(
+        "tradecopier.infrastructure.adapters.connection_adapter.ReceivingMessagePresenter",
+        autospec=True,
+    )
+
+
+def test_receiving_message_register_on_new(
+    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+):
     """
     tests registration of new terminal
     with cyphered=SILVER and non-cyphered message
@@ -59,9 +69,8 @@ def test_receiving_message_register_on_new(wsca, router_repo, term_repo, rule_re
         customer_type=CustomerType.BRONZE,
     )
     reg_msg_plain = factories.RegIncomingMessageFactory.create(
-        terminal_id=terminal_brz.terminal_id
+        message=factories.RegisterMessageFactory(terminal_id=terminal_brz.terminal_id)
     )
-    wsca.is_new_connection.return_value = True
     term_repo.save.side_effect = cust_save(terminal_brz)
     term_repo.get.return_value = None
     uc = ReceivingMessageUseCase(
@@ -69,57 +78,63 @@ def test_receiving_message_register_on_new(wsca, router_repo, term_repo, rule_re
         router_repo=router_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
+        outboundary=recv_msg_bnd,
     )
     uc.execute(reg_msg_plain)
-    assert wsca.is_new_connection.called
     assert term_repo.get.called
+    term_repo.save.side_effect = None
 
     terminal_slv = factories.TerminalFactory(
         registered_at=datetime.datetime.now(),
         customer_type=CustomerType.SILVER,
     )
     reg_msg_cyp = factories.RegIncomingMessageFactory(
-        message=factories.RegisterMessageFactory(is_cyphered=True),
-        terminal_id=terminal_brz.terminal_id,
+        message=factories.RegisterMessageFactory(
+            is_cyphered=True,
+            terminal_id=terminal_slv.terminal_id,
+        )
     )
+    assert reg_msg_cyp.message.terminal_id == terminal_slv.terminal_id
     term_repo.save.side_effect = cust_save(terminal_slv)
     uc.execute(reg_msg_cyp)
+    term_repo.save.side_effect = None
 
 
 def test_receiving_message_non_register_on_new(
-    wsca, mocker, router_repo, term_repo, rule_repo
+    wsca, mocker, router_repo, term_repo, rule_repo, recv_msg_bnd
 ):
     """
     ensure that ask registration message sent upon receive of
     non registration message for new connection
     """
-    wsca.is_new_connection.return_value = True
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
         router_repo=router_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
+        outboundary=recv_msg_bnd,
     )
     reg_msg = factories.OrdIncomingMessageFactory()
     reg_msg.message = factories.TradeMessageFactory()
     uc.execute(reg_msg)
-    assert wsca.is_new_connection.called
-    assert wsca.send_message.called
+    assert recv_msg_bnd.present.called
 
 
-def test_resceiving_trade_msg_no_rules(wsca, router_repo, term_repo, rule_repo):
+def test_resceiving_trade_msg_no_rules(
+    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+):
     """
     test bypass if not active
     test raising exception in case if no incoming rules defined.
     """
     router = factories.RouterFactory()
     dst_term = factories.TerminalFactory(customer_type=CustomerType.SILVER)
-    src_term = factories.TerminalFactory()
-    router.add_destination(dst_term)
+    src_term = factories.TerminalFactory(enabled=False)
+    # router.add_destination(dst_term)
     trd_msg = factories.OrdIncomingMessageFactory()
     trd_msg.message = factories.TradeMessageFactory()
 
-    wsca.is_new_connection.return_value = False
+    wsca.is_connected.return_value = False
     rule_repo.get_by_terminal_id.return_value = None
 
     uc = ReceivingMessageUseCase(
@@ -127,6 +142,7 @@ def test_resceiving_trade_msg_no_rules(wsca, router_repo, term_repo, rule_repo):
         router_repo=router_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
+        outboundary=recv_msg_bnd,
     )
     term_repo.get.return_value = src_term
     uc.execute(trd_msg)
@@ -142,7 +158,9 @@ def test_resceiving_trade_msg_no_rules(wsca, router_repo, term_repo, rule_repo):
 
 
 @pytest.mark.skip("looks excessive now")
-def test_resceiving_trade_msg_with_rules(wsca, router_repo, term_repo, rule_repo):
+def test_resceiving_trade_msg_with_rules(
+    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+):
     """
     test if src terminal != customer->source teminal found by account id
     then if equals - proceed
@@ -156,7 +174,7 @@ def test_resceiving_trade_msg_with_rules(wsca, router_repo, term_repo, rule_repo
     trd_msg = factories.OrdIncomingMessageFactory()
     trd_msg.message = factories.TradeMessageFactory()
 
-    wsca.is_new_connection.return_value = False
+    wsca.is_connected.return_value = False
     rule_repo.get_by_terminal_id.return_value = factories.RuleFactory()
 
     uc = ReceivingMessageUseCase(
@@ -164,6 +182,7 @@ def test_resceiving_trade_msg_with_rules(wsca, router_repo, term_repo, rule_repo
         router_repo=router_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
+        outboundary=recv_msg_bnd,
     )
     uc.execute(trd_msg)
     rule_repo.get_by_terminal_id.assert_not_called()
@@ -175,3 +194,4 @@ def test_resceiving_trade_msg_with_rules(wsca, router_repo, term_repo, rule_repo
     uc.execute(trd_msg)
     rule_repo.get_by_terminal_id.assert_called()
     wsca.send_message.assert_called()
+    rule_repo.get_by_terminal_id.return_value = None

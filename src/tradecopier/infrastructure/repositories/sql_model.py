@@ -3,13 +3,13 @@ from datetime import datetime
 from typing import Any, Optional
 
 from sqlalchemy import (Boolean, Column, Enum, Integer, MetaData, String,
-                        Table)
+                        Table, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.types import CHAR, DateTime, TypeDecorator
 from tradecopier.application.domain.value_objects import (CustomerType,
-                                                          TerminalType)
+                                                          RouteStatus)
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
@@ -25,10 +25,11 @@ class UUID(TypeDecorator):
     impl = CHAR
 
     def load_dialect_impl(self, dialect: Any) -> Any:
-        if dialect.name == "postgresql":
-            return dialect.type_descriptor(UUID())
-        else:
-            return dialect.type_descriptor(CHAR(32))
+        # if dialect.name == "postgresql":
+        #     return dialect.type_descriptor(UUID())
+        # else:
+        #     return dialect.type_descriptor(CHAR(32))
+        return dialect.type_descriptor(CHAR(32))
 
     def process_bind_param(self, value: Any, dialect: Any) -> Optional[str]:
         if value is None:
@@ -37,7 +38,10 @@ class UUID(TypeDecorator):
             return str(value)
         else:
             if not isinstance(value, uuid.UUID):
-                return "%.32x" % uuid.UUID(value).int
+                if "%" in value:  # mine
+                    return str(value)  # mine
+                else:  # mine
+                    return "%.32x" % uuid.UUID(value).int
             else:
                 # hexstring
                 return "%.32x" % value.int
@@ -64,6 +68,7 @@ TerminalModel = Table(
     "terminal",
     metadata,
     Column("terminal_id", UUID, primary_key=True),
+    Column("broker", String),
     Column("name", String),
     Column("expire_at", DateTime),
     Column("registered_at", DateTime, default=datetime.now),
@@ -72,13 +77,16 @@ TerminalModel = Table(
     Column("enabled", Boolean),
 )
 
+
 RouterModel = Table(
     "router",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("router_id", Integer, nullable=False),
-    Column("terminal_id", UUID, nullable=False),
-    Column("terminal_type", Enum(TerminalType), nullable=False),
+    Column("router_id", Integer, index=True, nullable=False),
+    Column("src_terminal_id", UUID, index=True, nullable=False),
+    Column("dst_terminal_id", UUID, nullable=False),
+    Column("status", Enum(RouteStatus), nullable=False),
+    UniqueConstraint("src_terminal_id", "dst_terminal_id", name="route"),
 )
 
 # CustomerModel = Table(

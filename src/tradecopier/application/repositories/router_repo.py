@@ -7,11 +7,11 @@ from tradecopier.application.domain.value_objects import RouterId, TerminalId
 
 class RouterRepo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get(self, customer_id: RouterId) -> Router:
+    def get(self, router_id: RouterId) -> Router:
         pass
 
     @abc.abstractmethod
-    def save(self, customer: Router) -> RouterId:
+    def save(self, router: Router) -> RouterId:
         pass
 
     @abc.abstractmethod

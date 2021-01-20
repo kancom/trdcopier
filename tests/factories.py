@@ -14,6 +14,10 @@ def new_uuid():
     return factory.Sequence(lambda x: "d327d84f-3f11-11eb-b357-d4258bbc%04d" % x)
 
 
+def new_uuid_tail():
+    return factory.Sequence(lambda x: "d4258bbc%04d" % x)
+
+
 class RuleFactory(factory.Factory):
     class Meta:
         model = Rule
@@ -21,6 +25,7 @@ class RuleFactory(factory.Factory):
 
 class TerminalFactory(factory.Factory):
     name = factory.Faker("name")
+    broker = factory.Faker("name")
     terminal_id = new_uuid()
     registered_at = factory.Faker("date_time_between", start_date="-2y")
 
@@ -38,6 +43,7 @@ class RouterFactory(factory.Factory):
 class RegisterMessageFactory(factory.Factory):
     terminal_id = new_uuid()
     name = factory.Faker("name")
+    broker = factory.Faker("name")
 
     class Meta:
         model = msg.RegisterMessage

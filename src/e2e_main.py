@@ -20,16 +20,30 @@ from tradecopier.infrastructure.repositories.rule_repo import \
 from tradecopier.infrastructure.repositories.terminal_repo import \
     SqlAlchemyTerminalRepo
 
-src = {"account_id": 2, "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0002"}
+src = {
+    "account_id": 2,
+    "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0002",
+    "broker": "brk@1234: mt5.123",
+}
 dst_term = [
-    {"account_id": 10, "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0010"},
-    {"account_id": 11, "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0011"},
+    {
+        "account_id": 10,
+        "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0010",
+        "broker": "brk@4543: mt5.111",
+    },
+    {
+        "account_id": 11,
+        "terminal_id": "d327d84f-3f11-11eb-b357-d4258bbc0011",
+        "broker": "brk@4543: mt5.122",
+    },
 ]
 
 
 def build_src():
     reg_msg = msg.IncomingMessage(
-        message=msg.RegisterMessage(terminal_id=src["terminal_id"], name="source")
+        message=msg.RegisterMessage(
+            terminal_id=src["terminal_id"], name="source", broker=src["broker"]
+        )
     )
     print(json.dumps(reg_msg.dict()))
     order = Order(
@@ -55,11 +69,10 @@ def build_src():
     print(json.dumps(trd_msg.dict()))
 
 
-def build_dst(terminal_id):
+def build_dst(terminal_id, broker):
     reg_msg = msg.IncomingMessage(
         message=msg.RegisterMessage(
-            terminal_id=terminal_id,
-            name="destination",
+            terminal_id=terminal_id, name="destination", broker=broker
         )
     )
     print(json.dumps(reg_msg.dict()))
@@ -67,13 +80,19 @@ def build_dst(terminal_id):
 
 def configure(db_conn):
     router = Router()
-    src_term = Terminal(terminal_id=src["terminal_id"], name="source_terminal")
+    src_term = Terminal(
+        terminal_id=src["terminal_id"], name="source_terminal", broker=src["broker"]
+    )
     router_repo = SqlAlchemyRouterRepo(db_conn)
     term_repo = SqlAlchemyTerminalRepo(db_conn)
     router.add_source(src_term)
     term_repo.save(src_term)
     for dst in dst_term:
-        dst_t = Terminal(terminal_id=dst["terminal_id"], name="destination_terminal")
+        dst_t = Terminal(
+            terminal_id=dst["terminal_id"],
+            name="destination_terminal",
+            broker=dst["broker"],
+        )
         router.add_destination(dst_t)
         term_repo.save(dst_t)
     cust_id = router_repo.save(router)
@@ -96,7 +115,7 @@ def main(argv: Optional[List[str]]) -> None:
 
     build_src()
     for t in dst_term:
-        build_dst(t["terminal_id"])
+        build_dst(t["terminal_id"], t["broker"])
     configure(db_conn)
     start_server = wsca.start_server(uc, rec_msg_presenter)
 

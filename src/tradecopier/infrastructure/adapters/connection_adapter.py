@@ -56,8 +56,10 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
                                 await out_ws.send(json.dumps(out_message.dict()))
                     self._register_ws(inc_message.message.terminal_id, in_ws)
             except ws.exceptions.ConnectionClosedError as e:
-                del self._ws_register[str(inc_message.message.terminal_id)]
-                raise Exception(str(e)) from e
+                try:
+                    del self._ws_register[str(inc_message.message.terminal_id)]
+                finally:
+                    raise Exception(str(e)) from e
 
         return consumer_handler
 

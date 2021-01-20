@@ -33,7 +33,7 @@ class Order(BaseModel):
     action: TradeAction
     symbol: Symbol
     magic: int = Field(ge=0)
-    order_ticket: int = Field(ge=0)
+    # order_ticket: int = Field(ge=0)
     volume: float = Field(ge=0)
     price: float = Field(ge=0)
     stoplimit: Optional[float] = Field(ge=0)
@@ -54,7 +54,6 @@ class Order(BaseModel):
                 self.action,
                 self.symbol,
                 self.magic,
-                self.order_ticket,
                 self.volume,
                 self.price,
                 self.stoplimit,

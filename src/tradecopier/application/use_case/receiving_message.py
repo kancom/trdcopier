@@ -43,6 +43,7 @@ class ReceivingMessageUseCase:
             terminal = Terminal(
                 terminal_id=message.terminal_id,
                 name=message.name,
+                broker=message.broker,
                 customer_type=CustomerType.SILVER
                 if message.is_cyphered
                 else CustomerType.BRONZE,

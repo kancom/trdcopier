@@ -49,6 +49,8 @@ py-spy = "*"
 pydantic = "*"
 websockets = "*"
 SQLAlchemy = "*"
+python-dotenv = "*"
+flask-injector = "*"
 
 [requires]
 python_version = "3.8"

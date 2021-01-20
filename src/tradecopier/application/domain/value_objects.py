@@ -4,6 +4,7 @@ from uuid import UUID
 RouterId = int
 RuleId = int
 TerminalId = UUID
+TerminalIdLen = 36
 AccountId = str
 Symbol = str
 
@@ -59,6 +60,12 @@ class FilterType(IntEnum):
 class TerminalType(IntEnum):
     SOURCE = 0
     DESTINATION = 1
+
+
+class RouteStatus(IntEnum):
+    SOURCE = 0
+    DESTINATION = 1
+    BOTH = 2
 
 
 class CustomerType(IntEnum):

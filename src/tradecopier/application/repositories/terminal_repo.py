@@ -11,5 +11,9 @@ class TerminalRepo(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def get_by_tail(self, terminal_id_tail: str) -> Optional[Terminal]:
+        pass
+
+    @abc.abstractmethod
     def save(self, terminal: Terminal) -> TerminalId:
         pass

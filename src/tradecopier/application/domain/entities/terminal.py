@@ -11,6 +11,7 @@ DEFAULT_LIFETIME = 60 * 60 * 24 * 60  # 60 days
 
 class Terminal(BaseModel):
     terminal_id: TerminalId = uuid1()
+    broker: str
     name: Optional[str] = None
     expire_at: Optional[datetime]
     registered_at: datetime = datetime.now()

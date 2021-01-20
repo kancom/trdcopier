@@ -20,57 +20,43 @@ class SqlAlchemyRouterRepo(RouterRepo):
     def get_by_src_terminal(self, terminal_id: TerminalId) -> List[Router]:
         router_id_lst = self._conn.execute(
             select(RouterModel.c.router_id).where(
-                and_(
-                    RouterModel.c.terminal_id == terminal_id,
-                    RouterModel.c.terminal_type == TerminalType.SOURCE,
-                )
+                RouterModel.c.src_terminal_id == terminal_id,
             )
         )
-        return [self.get(r[0]) for r in router_id_lst]
+        return [self.get(r.router_id) for r in router_id_lst]
 
     def get(self, router_id: RouterId) -> Router:
-        db_router_rows_iter = self._conn.execute(
+        db_router_rows = self._conn.execute(
             RouterModel.select().where(RouterModel.c.router_id == router_id)
-        )
-        if not db_router_rows_iter:
+        ).freeze()
+        if not db_router_rows:
             raise EntityNotFoundException(f"{router_id} not found")
-        db_router_rows = [r for r in db_router_rows_iter]
-        src_terminals = self._conn.execute(
-            TerminalModel.select(
-                whereclause=TerminalModel.c.terminal_id.in_(
-                    [
-                        row.terminal_id
-                        for row in db_router_rows
-                        if row.terminal_type == TerminalType.SOURCE
-                    ]
-                )
-            )
-        )
-        dst_terminals = self._conn.execute(
-            TerminalModel.select(
-                whereclause=TerminalModel.c.terminal_id.in_(
-                    [
-                        row.terminal_id
-                        for row in db_router_rows
-                        if row.terminal_type == TerminalType.DESTINATION
-                    ]
-                )
-            )
-        )
+        # db_router_rows = [r for r in db_router_rows_iter]
         router = Router(
             router_id=router_id,
-            sources=[
-                Terminal(**{k: v for k, v in terminal._mapping.items()})
-                for terminal in src_terminals
-            ],
-            destinations=[
-                Terminal(**{k: v for k, v in terminal._mapping.items()})
-                for terminal in dst_terminals
-            ],
         )
+        for row in db_router_rows():
+            source = self._conn.execute(
+                TerminalModel.select(
+                    whereclause=TerminalModel.c.terminal_id == row.src_terminal_id
+                )
+            ).one()
+            destination = self._conn.execute(
+                TerminalModel.select(
+                    whereclause=TerminalModel.c.terminal_id == row.dst_terminal_id
+                )
+            ).one()
+            router.add_route(
+                source=Terminal(**{k: v for k, v in source._mapping.items()}),
+                destination=Terminal(**{k: v for k, v in destination._mapping.items()}),
+                status=row.status,
+            )
+
         return router
 
     def save(self, router: Router) -> RouterId:
+        # obtain max router id
+        # if router is in db - delete it for update
         if router.router_id is not None:
             router_id = router.router_id
             self._conn.execute(
@@ -83,23 +69,15 @@ class SqlAlchemyRouterRepo(RouterRepo):
                 select(columns=[functions.max(RouterModel.c.router_id)])
             ).scalar()
             router_id = max_id + 1 if max_id is not None else 0
-        for terminal in router.sources:
+
+        for route in router.routes:
             self._conn.execute(
                 RouterModel.insert(
                     values={
                         RouterModel.c.router_id: router_id,
-                        RouterModel.c.terminal_type: TerminalType.SOURCE,
-                        RouterModel.c.terminal_id: terminal.terminal_id,
-                    }
-                )
-            )
-        for terminal in router.destinations:
-            self._conn.execute(
-                RouterModel.insert(
-                    values={
-                        RouterModel.c.router_id: router_id,
-                        RouterModel.c.terminal_type: TerminalType.DESTINATION,
-                        RouterModel.c.terminal_id: terminal.terminal_id,
+                        RouterModel.c.src_terminal_id: route.source.terminal_id,
+                        RouterModel.c.dst_terminal_id: route.destination.terminal_id,
+                        RouterModel.c.status: route.status,
                     }
                 )
             )

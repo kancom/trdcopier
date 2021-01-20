@@ -16,6 +16,7 @@ class Message(BaseModel):
 
 class RegisterMessage(Message):
     name: Optional[str] = None
+    broker: str
     is_cyphered: bool = False
 
 
@@ -39,7 +40,7 @@ class AskRegistrationMessage(Message):
         return hash(self.body)
 
 
-class OutTradeMessage(Message):
+class OutTradeMessage(BaseModel):
     body: Order
 
     def __hash__(self):

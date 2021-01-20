@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 
 from tradecopier.application.use_case.receiving_message import \
     ReceivingMessageUseCase
-from tradecopier.infrastructure.adapters.connection_adapter import \
-    WebSocketsConnectionAdapter
+from tradecopier.infrastructure.adapters.connection_adapter import (
+    ReceivingMessagePresenter, WebSocketsConnectionAdapter)
 from tradecopier.infrastructure.repositories.router_repo import \
     SqlAlchemyRouterRepo
 from tradecopier.infrastructure.repositories.rule_repo import \
@@ -29,8 +29,9 @@ def create_db(engine):
 
 
 def main(argv: Optional[List[str]]) -> None:
-    db_conn = get_db_connection()
     wsca = WebSocketsConnectionAdapter()
+    db_conn = get_db_connection()
+    rec_msg_presenter = ReceivingMessagePresenter()
     router_repo = SqlAlchemyRouterRepo(db_conn)
     term_repo = SqlAlchemyTerminalRepo(db_conn)
     rule_repo = SqlAlchemyRuleRepo(db_conn)
@@ -39,9 +40,10 @@ def main(argv: Optional[List[str]]) -> None:
         router_repo=router_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
+        outboundary=rec_msg_presenter,
     )
 
-    start_server = wsca.start_server(uc)
+    start_server = wsca.start_server(uc, rec_msg_presenter)
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
