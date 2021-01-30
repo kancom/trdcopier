@@ -1,4 +1,4 @@
-from uuid import uuid1
+from uuid import uuid4
 
 import factories
 from tradecopier.application.domain.value_objects import CustomerType
@@ -43,7 +43,7 @@ def test_router_repo(router_table, terminal_table, sql_conn, router_factory):
 def test_terminal_repo(terminal_table, sql_conn):
     terminal = factories.TerminalFactory.build()
     repo = SqlAlchemyTerminalRepo(sql_conn)
-    tid = uuid1()
+    tid = uuid4()
     assert repo.get(tid) is None
     repo.save(terminal)
     assert repo.get(terminal.terminal_id) == terminal

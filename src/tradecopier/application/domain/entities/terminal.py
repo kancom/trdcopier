@@ -1,16 +1,17 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
-from uuid import uuid1
+from uuid import uuid4
 
 from pydantic import BaseModel
 from tradecopier.application.domain.value_objects import (CustomerType,
+                                                          TerminalBrand,
                                                           TerminalId)
 
 DEFAULT_LIFETIME = 60 * 60 * 24 * 60  # 60 days
 
 
 class Terminal(BaseModel):
-    terminal_id: TerminalId = uuid1()
+    terminal_id: TerminalId = uuid4()
     broker: str
     name: Optional[str] = None
     expire_at: Optional[datetime]
@@ -18,6 +19,28 @@ class Terminal(BaseModel):
     customer_type: CustomerType = CustomerType.BRONZE
     # filters: List[Filter] = Field(default_factory=list)
     enabled: bool = True
+
+    @property
+    def str_id(self):
+        return self.name if self.name is not None and self.name != "" else self.broker
+
+    @property
+    def expiration(self):
+        if self.expire_at is not None:
+            return self.expire_at
+        if self.customer_type == CustomerType.BRONZE:
+            return self.registered_at + timedelta(seconds=DEFAULT_LIFETIME)
+
+    @property
+    def terminal_brand(self):
+        result = TerminalBrand.UNKNOWN.value
+        if self.broker != "":
+            if ": mt4" in self.broker:
+                result = TerminalBrand.METATRADER4.value
+            elif ": mt5" in self.broker:
+                result = TerminalBrand.METATRADER5.value
+
+        return result
 
     def __hash__(self):
         return hash(self.terminal_id)

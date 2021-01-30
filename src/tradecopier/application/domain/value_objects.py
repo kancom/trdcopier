@@ -76,3 +76,11 @@ class CustomerType(IntEnum):
 
 class EntityNotFoundException(Exception):
     pass
+
+
+class TerminalBrand(IntEnum):
+    UNKNOWN = 0
+    METATRADER4 = auto()
+    METATRADER5 = auto()
+    QUIK = auto()
+    WEB_BINANCE = auto()

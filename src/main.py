@@ -1,7 +1,9 @@
 import asyncio
+import os
 import sys
 from typing import List, Optional
 
+import dotenv
 from sqlalchemy import create_engine
 
 from tradecopier.application.use_case.receiving_message import \
@@ -18,7 +20,7 @@ from tradecopier.infrastructure.repositories.terminal_repo import \
 
 
 def get_db_connection():
-    engine = create_engine("sqlite:///testdb.db", echo=False)
+    engine = create_engine(os.environ["DB_DSN"])
     create_db(engine)
     db_conn = engine.connect()
     return db_conn
@@ -29,6 +31,11 @@ def create_db(engine):
 
 
 def main(argv: Optional[List[str]]) -> None:
+    config_path = os.environ.get(
+        "CONFIG_PATH",
+        os.path.join(os.path.dirname(__file__), os.pardir, ".env"),
+    )
+    dotenv.load_dotenv(config_path)
     wsca = WebSocketsConnectionAdapter()
     db_conn = get_db_connection()
     rec_msg_presenter = ReceivingMessagePresenter()

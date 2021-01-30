@@ -51,6 +51,10 @@ websockets = "*"
 SQLAlchemy = "*"
 python-dotenv = "*"
 flask-injector = "*"
+flask-babel = "*"
+flask-login = "*"
+flask-wtf = "*"
+flask-bootstrap4 = "*"
 
 [requires]
 python_version = "3.8"

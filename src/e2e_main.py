@@ -1,7 +1,10 @@
 import asyncio
 import json
+import os
 import sys
 from typing import List, Optional
+
+import dotenv
 
 from main import SqlAlchemyTerminalRepo, get_db_connection
 from tradecopier.application.domain import value_objects as vo
@@ -17,6 +20,7 @@ from tradecopier.infrastructure.repositories.router_repo import \
     SqlAlchemyRouterRepo
 from tradecopier.infrastructure.repositories.rule_repo import \
     SqlAlchemyRuleRepo
+from tradecopier.infrastructure.repositories.sql_model import RouteStatus
 from tradecopier.infrastructure.repositories.terminal_repo import \
     SqlAlchemyTerminalRepo
 
@@ -85,20 +89,24 @@ def configure(db_conn):
     )
     router_repo = SqlAlchemyRouterRepo(db_conn)
     term_repo = SqlAlchemyTerminalRepo(db_conn)
-    router.add_source(src_term)
-    term_repo.save(src_term)
     for dst in dst_term:
         dst_t = Terminal(
             terminal_id=dst["terminal_id"],
             name="destination_terminal",
             broker=dst["broker"],
         )
-        router.add_destination(dst_t)
+        router.add_route(source=src_term, destination=dst_t, status=RouteStatus.BOTH)
         term_repo.save(dst_t)
+    term_repo.save(src_term)
     cust_id = router_repo.save(router)
 
 
 def main(argv: Optional[List[str]]) -> None:
+    config_path = os.environ.get(
+        "CONFIG_PATH",
+        os.path.join(os.path.dirname(__file__), os.pardir, ".env"),
+    )
+    dotenv.load_dotenv(config_path)
     wsca = WebSocketsConnectionAdapter()
     db_conn = get_db_connection()
     rec_msg_presenter = ReceivingMessagePresenter()

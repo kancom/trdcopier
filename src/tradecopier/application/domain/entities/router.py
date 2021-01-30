@@ -21,7 +21,6 @@ class Router(BaseModel):
         destination: Terminal,
         status: RouteStatus = RouteStatus.BOTH,
     ):
-
         assert source.is_active, "source must be active"
         assert destination.is_active, "destination must be active"
         assert not any(

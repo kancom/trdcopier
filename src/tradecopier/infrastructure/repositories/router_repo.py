@@ -19,7 +19,9 @@ class SqlAlchemyRouterRepo(RouterRepo):
 
     def get_by_src_terminal(self, terminal_id: TerminalId) -> List[Router]:
         router_id_lst = self._conn.execute(
-            select(RouterModel.c.router_id).where(
+            select(RouterModel.c.router_id)
+            .distinct()
+            .where(
                 RouterModel.c.src_terminal_id == terminal_id,
             )
         )

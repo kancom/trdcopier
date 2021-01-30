@@ -1,6 +1,7 @@
 from typing import Optional
 
 from sqlalchemy.engine import Connection
+from sqlalchemy.exc import StatementError
 from tradecopier.application.domain.entities.terminal import Terminal
 from tradecopier.application.domain.value_objects import TerminalId
 from tradecopier.application.repositories.terminal_repo import TerminalRepo
@@ -12,11 +13,14 @@ class SqlAlchemyTerminalRepo(TerminalRepo):
         self._conn = conn
 
     def get(self, terminal_id: TerminalId) -> Optional[Terminal]:
-        db_terminal = self._conn.execute(
-            TerminalModel.select().where(
-                TerminalModel.c.terminal_id == terminal_id,
-            )
-        ).first()
+        try:
+            db_terminal = self._conn.execute(
+                TerminalModel.select().where(
+                    TerminalModel.c.terminal_id == terminal_id,
+                )
+            ).first()
+        except StatementError as e:
+            return None
         if not db_terminal:
             return None
             # raise EntityNotFoundException(f"{terminal_id} not found")
