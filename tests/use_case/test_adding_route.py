@@ -8,9 +8,9 @@ from tradecopier.application.use_case.adding_route import AddingRouteUseCase
 
 
 @pytest.fixture
-def router_repo(mocker):
+def route_repo(mocker):
     return mocker.patch(
-        "tradecopier.infrastructure.repositories.router_repo.SqlAlchemyRouterRepo",
+        "tradecopier.infrastructure.repositories.route_repo.SqlAlchemyRouteRepo",
         autospec=True,
     )
 
@@ -34,40 +34,42 @@ def get_uuid_tail(get_uuid):
 
 
 def test_improper_uuids(
-    mocker, get_uuid, get_uuid_tail, term_repo, router_repo, terminal_factory
+    mocker, get_uuid, get_uuid_tail, term_repo, route_repo, terminal_factory
 ):
     def save(check):
-        def save(router):
-            check(router)
+        def save(route):
+            check(route)
 
         return save
 
     ar_bound = mocker.MagicMock()
     uc = AddingRouteUseCase(
-        router_repo=router_repo, terminal_repo=term_repo, boundary=ar_bound
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
     )
     sources = [get_uuid_tail]
     destinations = [get_uuid_tail]
-    with pytest.raises(AssertionError, match="both terminals are passed as tail"):
-        uc.execute(sources=sources, destinations=destinations)
+    # with pytest.raises(AssertionError, match="both terminals are passed as tail"):
+    uc.execute(sources=sources, destinations=destinations)
+    assert ar_bound.present.called_with({"error": "both terminals are passed as tail"})
 
     sources = [get_uuid[2:]]
-    with pytest.raises(AssertionError, match="incorrectly formed source"):
-        uc.execute(sources=sources, destinations=destinations)
+    # with pytest.raises(AssertionError, match="incorrectly formed source"):
+    uc.execute(sources=sources, destinations=destinations)
+    assert ar_bound.present.called_with({"error": "incorrectly formed source"})
 
 
 def test_route_status(
-    mocker, get_uuid, get_uuid_tail, term_repo, router_repo, terminal_factory
+    mocker, get_uuid, get_uuid_tail, term_repo, route_repo, terminal_factory
 ):
     sources = [get_uuid]
     destinations = [get_uuid_tail]
-    router_repo.save.side_effect = lambda x: x.routes[0].status == RouteStatus.SOURCE
+    route_repo.save.side_effect = lambda x: x.status == RouteStatus.SOURCE
     term_repo.get.side_effect = lambda x: terminal_factory(registered_at=datetime.now())
     term_repo.get_by_tail.side_effect = lambda x: terminal_factory(
         registered_at=datetime.now()
     )
     ar_bound = mocker.MagicMock()
     uc = AddingRouteUseCase(
-        router_repo=router_repo, terminal_repo=term_repo, boundary=ar_bound
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
     )
     uc.execute(sources=sources, destinations=destinations)

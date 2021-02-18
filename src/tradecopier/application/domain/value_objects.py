@@ -1,7 +1,7 @@
 from enum import IntEnum, auto
 from uuid import UUID
 
-RouterId = int
+RouteId = int
 RuleId = int
 TerminalId = UUID
 TerminalIdLen = 36
@@ -50,6 +50,16 @@ class FilterOperation(IntEnum):
     GE = auto()
     GT = auto()
     NE = auto()
+    IN = auto()
+
+
+class TransformOperation(IntEnum):
+    SET = 100
+    APPEND = auto()
+    MULTIPLY = auto()
+    ADD = auto()
+    SETIF = auto()
+    REVERSE = auto()
 
 
 class FilterType(IntEnum):
@@ -60,6 +70,7 @@ class FilterType(IntEnum):
 class TerminalType(IntEnum):
     SOURCE = 0
     DESTINATION = 1
+    UNKNOWN = 2
 
 
 class RouteStatus(IntEnum):

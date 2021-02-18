@@ -1,20 +1,16 @@
 import abc
 
 from tradecopier.application.domain.entities.rule import Rule
-from tradecopier.application.domain.value_objects import RuleId, TerminalId
+from tradecopier.application.domain.value_objects import TerminalId
 
 
 class RuleRepo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def get(self, rule_id: RuleId) -> Rule:
+    def get(self, terminal_id: TerminalId) -> Rule:
         pass
 
     @abc.abstractmethod
-    def get_by_terminal_id(self, terminal_id: TerminalId) -> Rule:
-        pass
-
-    @abc.abstractmethod
-    def save(self, rule: Rule) -> RuleId:
+    def save(self, rule: Rule):
         pass
 
     # @abc.abstractmethod

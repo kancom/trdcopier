@@ -10,8 +10,8 @@ from tradecopier.application.use_case.receiving_message import \
     ReceivingMessageUseCase
 from tradecopier.infrastructure.adapters.connection_adapter import (
     ReceivingMessagePresenter, WebSocketsConnectionAdapter)
-from tradecopier.infrastructure.repositories.router_repo import \
-    SqlAlchemyRouterRepo
+from tradecopier.infrastructure.repositories.route_repo import \
+    SqlAlchemyRouteRepo
 from tradecopier.infrastructure.repositories.rule_repo import \
     SqlAlchemyRuleRepo
 from tradecopier.infrastructure.repositories.sql_model import metadata
@@ -39,12 +39,12 @@ def main(argv: Optional[List[str]]) -> None:
     wsca = WebSocketsConnectionAdapter()
     db_conn = get_db_connection()
     rec_msg_presenter = ReceivingMessagePresenter()
-    router_repo = SqlAlchemyRouterRepo(db_conn)
+    route_repo = SqlAlchemyRouteRepo(db_conn)
     term_repo = SqlAlchemyTerminalRepo(db_conn)
     rule_repo = SqlAlchemyRuleRepo(db_conn)
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
-        router_repo=router_repo,
+        route_repo=route_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
         outboundary=rec_msg_presenter,

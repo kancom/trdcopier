@@ -1,6 +1,21 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% extends "base.html" %}
 
+{#
+------------------------------------------------------
+#}
+{% macro status_sym(status) %}
+{% if status == 0 %}
+&rarr;
+{% elif status == 1 %}
+&larr;
+{% else %}
+&harr;
+{% endif %}
+{% endmacro %}
+{#
+------------------------------------------------------
+#}
 {% macro term_brand_logo(id=0) %}
 {% if id == 1 %}
 <img src={{ url_for('static', filename='MT4-logo.png') }} width="25" height="25" class="d-inline-block align-top" alt="mt4">
@@ -10,6 +25,94 @@
 {{ id }}
 {% endif %}
 {% endmacro %}
+{#
+------------------------------------------------------
+#}
+
+{% macro draw_single_terminal(terminal) %}
+<td>
+    {{ term_brand_logo(terminal['terminal_brand']) }}
+</td>
+<td>
+    {{ terminal['terminal_id'] }}
+</td>
+<td>
+    "{{ terminal['str_id'] }}"<br />
+</td>
+{% endmacro %}
+
+{#
+------------------------------------------------------
+#}
+
+{% macro draw_route(terminal, route) %}
+{{ draw_single_terminal(terminal) }}
+<td>
+    " {{ status_sym(route['status']) }}"<br />
+</td>
+<td>
+    <form action="{{ url_for('main_blueprint.delete') }}" method="post">
+        <input type="hidden" name="route_id" value="{{ route['route_id'] }}">
+        <input type="submit" class="btn btn-danger" value="{{ _('Delete') }}">
+    </form>
+</td>
+{% endmacro %}
+{#
+------------------------------------------------------
+#}
+
+{% macro draw_terminals(terminals) %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th scope="col">{{ _("Terminal type") }}</th>
+            <th scope="col">{{ _("Terminal id") }}</th>
+            <th scope="col">{{ _("Terminal name") }}</th>
+            <th scope="col">{{ _("Processing Rules") }} </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for terminal in terminals %}
+        <tr>
+            {{ draw_single_terminal(terminal) }}
+            <td>
+                <form action="{{ url_for('main_blueprint.edit_expr') }}" method="post">
+                    <input type="submit" class="btn btn-warning" value="{{ _('Edit') }}">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+{#
+------------------------------------------------------
+#}
+
+{% macro draw_routes(peers) %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th scope="col">{{ _("Terminal type") }}</th>
+            <th scope="col">{{ _("Terminal id") }}</th>
+            <th scope="col">{{ _("Terminal name") }}</th>
+            <th scope="col">{{ _("Route status") }}</th>
+            <th scope="col">{{ _("Actions") }} </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for terminal, route in peers %}
+        <tr>
+            {{ draw_route(terminal, route) }}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+{#
+------------------------------------------------------
+#}
 
 {% block app_content %}
 <div class="container-fluid">
@@ -20,46 +123,40 @@
     {% endfor %}
     {% endif %}
     {% endwith %}
-    <div class="row justify-content-md-center">
-        <div class="col-md">
+    <div class="row">
+        <div class="col-sm">
             <div class="row">
                 <h5> {{ _("Sources") }} </h5>
             </div>
-            {#
             <div class="row">
-                {{ wtf.quick_form(add_src_term_form,id="src", button_map={'submit_button': 'primary'}) }}
-            </div>
-            <div class="row">
-                <br>
-                <br />
-            </div>
-            #}
-            <div class="row">
-                {% for source in sources %}
-                {{ term_brand_logo(source['brand']) }}
-                {{ source['terminal_id'] }} "{{ source['id'] }}"<br />
-                {% endfor %}
-            </div>
-        </div>
-        <div class="col-lg">
-            <div class="row">
-                <div class="col">
-                    {{ _("Nodes") }} <span class="badge badge-light">{{ nodes_nb }}</span>
-                </div>
-                <div class="col">Graph
-                    <svg width="400" height="180">
-                        <rect x="50" y="20" rx="20" ry="20" width="150" height="150" style="fill:red;stroke:black;stroke-width:5;opacity:0.5" />
-                    </svg>
-                </div>
+                {% if term_type == 0 %}
+                {{ draw_terminals(own_terminal)  }}
+                {% else %}
+                {{ draw_routes(peers) }}
+                {{ wtf.quick_form(form,  button_map={'submit_button': 'primary'}) }}
+                {% endif %}
             </div>
         </div>
         <div class="col-sm">
-            <h5> {{ _("Destinations") }} </h5>
-            {{ wtf.quick_form(add_dst_term_form, id="dst", button_map={'submit_button': 'primary'}) }}
-            {% for destination in destinations %}
-            {{ term_brand_logo(destination['brand']) }}
-            {{ destination['terminal_id'] }} "{{ destination['id'] }}"<br />
-            {% endfor %}
+            <div class="row">
+                {{ _("Nodes") }} <span class="badge badge-light">{{ nodes_nb }}</span>
+            </div>
+            <div class="row">
+                {{ svg|safe }}
+            </div>
+        </div>
+        <div class="col-sm">
+            <div class="row">
+                <h5> {{ _("Destinations") }} </h5>
+            </div>
+            <div class="row">
+                {% if term_type == 1 %}
+                {{ draw_terminals(own_terminal)  }}
+                {% else %}
+                {{ draw_routes(peers) }}
+                {{ wtf.quick_form(form,  button_map={'submit_button': 'primary'}) }}
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

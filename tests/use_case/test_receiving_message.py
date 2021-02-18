@@ -18,9 +18,9 @@ def wsca(mocker):
 
 
 @pytest.fixture
-def router_repo(mocker):
+def route_repo(mocker):
     return mocker.patch(
-        "tradecopier.infrastructure.repositories.router_repo.SqlAlchemyRouterRepo",
+        "tradecopier.infrastructure.repositories.route_repo.SqlAlchemyRouteRepo",
         autospec=True,
     )
 
@@ -50,7 +50,7 @@ def recv_msg_bnd(mocker):
 
 
 def test_receiving_message_register_on_new(
-    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+    wsca, route_repo, term_repo, rule_repo, recv_msg_bnd
 ):
     """
     tests registration of new terminal
@@ -75,7 +75,7 @@ def test_receiving_message_register_on_new(
     term_repo.get.return_value = None
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
-        router_repo=router_repo,
+        route_repo=route_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
         outboundary=recv_msg_bnd,
@@ -101,7 +101,7 @@ def test_receiving_message_register_on_new(
 
 
 def test_receiving_message_non_register_on_new(
-    wsca, mocker, router_repo, term_repo, rule_repo, recv_msg_bnd
+    wsca, mocker, route_repo, term_repo, rule_repo, recv_msg_bnd
 ):
     """
     ensure that ask registration message sent upon receive of
@@ -109,7 +109,7 @@ def test_receiving_message_non_register_on_new(
     """
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
-        router_repo=router_repo,
+        route_repo=route_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
         outboundary=recv_msg_bnd,
@@ -121,16 +121,16 @@ def test_receiving_message_non_register_on_new(
 
 
 def test_resceiving_trade_msg_no_rules(
-    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+    wsca, route_repo, term_repo, rule_repo, recv_msg_bnd
 ):
     """
     test bypass if not active
     test raising exception in case if no incoming rules defined.
     """
-    router = factories.RouterFactory()
+    route = factories.RouteFactory()
     dst_term = factories.TerminalFactory(customer_type=CustomerType.SILVER)
     src_term = factories.TerminalFactory(enabled=False)
-    # router.add_destination(dst_term)
+    # route.add_destination(dst_term)
     trd_msg = factories.OrdIncomingMessageFactory()
     trd_msg.message = factories.TradeMessageFactory()
 
@@ -139,7 +139,7 @@ def test_resceiving_trade_msg_no_rules(
 
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
-        router_repo=router_repo,
+        route_repo=route_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
         outboundary=recv_msg_bnd,
@@ -159,13 +159,13 @@ def test_resceiving_trade_msg_no_rules(
 
 @pytest.mark.skip("looks excessive now")
 def test_resceiving_trade_msg_with_rules(
-    wsca, router_repo, term_repo, rule_repo, recv_msg_bnd
+    wsca, route_repo, term_repo, rule_repo, recv_msg_bnd
 ):
     """
     test if src terminal != customer->source teminal found by account id
     then if equals - proceed
     """
-    customer = factories.RouterFactory(customer_type=CustomerType.SILVER)
+    customer = factories.RouteFactory(customer_type=CustomerType.SILVER)
     dst_term = factories.TerminalFactory()
     src_term = factories.TerminalFactory()
     src_term.id = uuid1()
@@ -179,7 +179,7 @@ def test_resceiving_trade_msg_with_rules(
 
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
-        router_repo=router_repo,
+        route_repo=route_repo,
         terminal_repo=term_repo,
         rule_repo=rule_repo,
         outboundary=recv_msg_bnd,

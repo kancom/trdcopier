@@ -9,8 +9,8 @@ from tradecopier.application.domain.entities.message import (
     RegisterMessage)
 from tradecopier.application.domain.entities.terminal import Terminal
 from tradecopier.application.domain.value_objects import (
-    CustomerType, EntityNotFoundException, TerminalId)
-from tradecopier.application.repositories.router_repo import RouterRepo
+    CustomerType, EntityNotFoundException, TerminalId, TerminalType)
+from tradecopier.application.repositories.route_repo import RouteRepo
 from tradecopier.application.repositories.rule_repo import RuleRepo
 from tradecopier.application.repositories.terminal_repo import TerminalRepo
 
@@ -26,13 +26,13 @@ class ReceivingMessageUseCase:
         self,
         *,
         conn_handler: ConnectionHandlerAdapter,
-        router_repo: RouterRepo,
+        route_repo: RouteRepo,
         terminal_repo: TerminalRepo,
         rule_repo: RuleRepo,
         outboundary: ReceivingMessageBoundary,
     ):
         self._conn_adapter = conn_handler
-        self._router_repo = router_repo
+        self._route_repo = route_repo
         self._terminal_repo = terminal_repo
         self._rule_repo = rule_repo
         self._out_bound = outboundary
@@ -56,7 +56,9 @@ class ReceivingMessageUseCase:
         src_terminal_id = message.terminal_id
         if terminal is None or not terminal.is_active:
             return
-        routers = self._router_repo.get_by_src_terminal(src_terminal_id)
+        routes = self._route_repo.get_by_terminal_id(
+            src_terminal_id, term_type=TerminalType.SOURCE
+        )
         if (src_rule := self._rule_repo.get_by_terminal_id(src_terminal_id)) is None:
             raise EntityNotFoundException(
                 f"rule for terminal {src_terminal_id} not found"
@@ -64,12 +66,7 @@ class ReceivingMessageUseCase:
         if (src_msg := src_rule.apply(message)) is None:
             return
         destinations = set(
-            [
-                terminal
-                for router in routers
-                for terminal in router.destinations
-                if terminal.is_active
-            ]
+            [route.destination for route in routes if route.destination.is_active]
         )
         out_msgs = defaultdict(set)
         for dst_terminal in destinations:

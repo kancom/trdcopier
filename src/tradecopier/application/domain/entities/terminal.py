@@ -17,7 +17,6 @@ class Terminal(BaseModel):
     expire_at: Optional[datetime]
     registered_at: datetime = datetime.now()
     customer_type: CustomerType = CustomerType.BRONZE
-    # filters: List[Filter] = Field(default_factory=list)
     enabled: bool = True
 
     @property

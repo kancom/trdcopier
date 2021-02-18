@@ -2,7 +2,8 @@ import pytest
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateTable, DropTable
-from tradecopier.infrastructure.repositories.sql_model import (RouterModel,
+from tradecopier.infrastructure.repositories.sql_model import (RouteModel,
+                                                               RuleModel,
                                                                TerminalModel)
 
 
@@ -58,8 +59,20 @@ def terminal_table(create_table_by_model, drop_table_by_model):
 
 
 @pytest.fixture(scope="session")
-def router_table(create_table_by_model, drop_table_by_model):
-    table_model = RouterModel
+def route_table(create_table_by_model, drop_table_by_model):
+    table_model = RouteModel
+    try:
+        create_table_by_model(table_model)
+    except OperationalError as e:
+        drop_table_by_model(table_model)
+        raise Exception(str(e)) from e
+    yield
+    drop_table_by_model(table_model)
+
+
+@pytest.fixture(scope="session")
+def rule_table(create_table_by_model, drop_table_by_model):
+    table_model = RuleModel
     try:
         create_table_by_model(table_model)
     except OperationalError as e:

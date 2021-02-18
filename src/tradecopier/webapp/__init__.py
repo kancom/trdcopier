@@ -20,9 +20,11 @@ class AppContext:
 def bootstrap_app(app: Flask) -> AppContext:
     config_path = os.environ.get(
         "CONFIG_PATH",
-        os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, ".env"),
+        os.path.join(
+            os.path.dirname(__file__), os.pardir, os.pardir, os.pardir, ".env"
+        ),
     )
-    dotenv.load_dotenv(config_path)
+    assert dotenv.load_dotenv(dotenv_path=config_path)
     engine = create_engine(os.environ["DB_DSN"])
     dependency_injector = _setup_dependency_injection(app, engine)
 
@@ -44,7 +46,7 @@ def _setup_dependency_injection(app: Flask, engine: Engine) -> injector.Injector
 
 def _create_db_schema(engine: Engine) -> None:
     from tradecopier.infrastructure.repositories.sql_model import (
-        FilterSetModel, RouterModel, TerminalModel, metadata)
+        RouteModel, RuleModel, TerminalModel, metadata)
 
     # TODO: Use migrations for that
     metadata.create_all(engine)

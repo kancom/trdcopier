@@ -2,9 +2,9 @@ import os
 
 from flask import Flask
 from flask_injector import FlaskInjector
+from tradecopier.application import RouteBoundaryWeb
 from tradecopier.webapp import bootstrap_app
-from tradecopier.webapp.blueprints.main import (RouterBoundaryWeb,
-                                                main_blueprint)
+from tradecopier.webapp.blueprints.main import main_blueprint
 from tradecopier.webapp.extensions import setup_extension
 
 
@@ -21,8 +21,7 @@ def create_app() -> Flask:
     )
     app.config.from_pyfile(config_path)
     setup_extension(app)
-
     app_context = bootstrap_app(app)
-    FlaskInjector(app, modules=[RouterBoundaryWeb()], injector=app_context.injector)
+    FlaskInjector(app, modules=[RouteBoundaryWeb()], injector=app_context.injector)
     app.injector = app_context.injector
     return app

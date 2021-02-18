@@ -5,9 +5,11 @@ import factory.fuzzy
 from tradecopier.application.domain import value_objects as vo
 from tradecopier.application.domain.entities import message as msg
 from tradecopier.application.domain.entities.order import Order
-from tradecopier.application.domain.entities.router import Router
-from tradecopier.application.domain.entities.rule import Rule
+from tradecopier.application.domain.entities.route import Route
+from tradecopier.application.domain.entities.rule import Expression, Rule
 from tradecopier.application.domain.entities.terminal import Terminal
+from tradecopier.application.domain.value_objects import (CustomerType,
+                                                          FilterOperation)
 
 
 def new_uuid():
@@ -33,11 +35,13 @@ class TerminalFactory(factory.Factory):
         model = Terminal
 
 
-class RouterFactory(factory.Factory):
-    router_id = factory.fuzzy.FuzzyInteger(1, 100)
+class RouteFactory(factory.Factory):
+    route_id = factory.fuzzy.FuzzyInteger(1, 100)
+    source = factory.SubFactory(TerminalFactory, customer_type=CustomerType.SILVER)
+    destination = factory.SubFactory(TerminalFactory, customer_type=CustomerType.SILVER)
 
     class Meta:
-        model = Router
+        model = Route
 
 
 class RegisterMessageFactory(factory.Factory):
@@ -55,7 +59,7 @@ class OrderFactory(factory.Factory):
     magic = factory.fuzzy.FuzzyInteger(1, 100)
     order_ticket = factory.fuzzy.FuzzyInteger(1, 100)
     volume = factory.fuzzy.FuzzyFloat(10)
-    price = factory.fuzzy.FuzzyFloat(1, 2)
+    price = factory.fuzzy.FuzzyFloat(10, 50)
     order_type = vo.OrderType.ORDER_TYPE_BUY
     order_type_filling = vo.OrderTypeFilling.ORDER_FILLING_FOK
     type_time = vo.TypeTime.ORDER_TIME_DAY
@@ -86,3 +90,12 @@ class OrdIncomingMessageFactory(factory.Factory):
 
     class Meta:
         model = msg.IncomingMessage
+
+
+class RuleExpressionFactory(factory.Factory):
+    field = factory.fuzzy.FuzzyChoice(("price", "sl", "tp"))
+    value = factory.fuzzy.FuzzyFloat(1, 100)
+    operator = factory.fuzzy.FuzzyChoice([o for o in FilterOperation])
+
+    class Meta:
+        model = Expression

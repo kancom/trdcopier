@@ -72,3 +72,4 @@ k8s/*secret*.y*ml
 
 .run
 .vscode
+.coverage

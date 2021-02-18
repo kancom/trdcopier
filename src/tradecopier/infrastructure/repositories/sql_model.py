@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import (Boolean, Column, Enum, Integer, MetaData, String,
+from sqlalchemy import (JSON, Boolean, Column, Enum, Integer, MetaData, String,
                         Table, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,7 +12,6 @@ from tradecopier.application.domain.value_objects import (CustomerType,
                                                           RouteStatus)
 
 metadata = MetaData()
-Base = declarative_base(metadata=metadata)
 
 
 class UUID(TypeDecorator):
@@ -55,15 +54,6 @@ class UUID(TypeDecorator):
             return value  # type: ignore
 
 
-FilterSetModel = Table(
-    "filterset",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("set_id", Integer),
-)
-
-# terminal = relationship("TerminalModel", back_populates="filters")
-
 TerminalModel = Table(
     "terminal",
     metadata,
@@ -78,33 +68,23 @@ TerminalModel = Table(
 )
 
 
-RouterModel = Table(
-    "router",
+RouteModel = Table(
+    "route",
     metadata,
-    Column("id", Integer, primary_key=True),
-    Column("router_id", Integer, index=True, nullable=False),
+    Column("route_id", Integer, primary_key=True),
     Column("src_terminal_id", UUID, index=True, nullable=False),
     Column("dst_terminal_id", UUID, nullable=False),
     Column("status", Enum(RouteStatus), nullable=False),
     UniqueConstraint("src_terminal_id", "dst_terminal_id", name="route"),
 )
 
-# CustomerModel = Table(
-#     "customer",
-#     metadata,
-#     Column("id", Integer, primary_key=True),
-#     # Column("account_id", String, index=True, unique=True),
-#     Column("name", String),
-#     Column("expire_at", DateTime),
-#     Column("registered_at", DateTime, default=datetime.now),
-#     Column("sources_mapping_id", Integer),
-#     Column("destinations_mapping_id", Integer),
-#     Column("customer_type", Enum(CustomerType)),
-#     Column("enabled", Boolean),
-# )
-
-
-# filters = relationship("FilterSetModel", back_populates="terminal")
-
-# def __eq__(self, other):
-#     return isinstance(other, TerminalModel) and self.id == other.id
+RuleModel = Table(
+    "rule",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("terminal_id", UUID),
+    Column("is_transform", Boolean, nullable=False),
+    Column("field", String),
+    Column("value", String),
+    Column("operator", Integer, nullable=False),
+)

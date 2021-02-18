@@ -13,11 +13,13 @@ import factories
 # from use_case.registering_terminal import RegisterTerminalUseCase
 
 
-register_factory(factories.RouterFactory)
+register_factory(factories.RouteFactory)
 register_factory(factories.TerminalFactory)
 register_factory(factories.RegisterMessageFactory)
 register_factory(factories.RegIncomingMessageFactory)
 register_factory(factories.OrdIncomingMessageFactory)
+register_factory(factories.TradeMessageFactory)
+register_factory(factories.RuleExpressionFactory)
 
 
 @pytest.fixture
