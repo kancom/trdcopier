@@ -21,7 +21,6 @@ from tradecopier.webapp.forms.config import AddRouteForm, AddTerminalForm
 from tradecopier.webapp.forms.login import LoginForm
 
 from ..dto import config as cfgdto
-from ..extensions import specs
 
 main_blueprint = Blueprint("main_blueprint", __name__)
 
@@ -129,7 +128,6 @@ def login_required(f):
     methods=["POST"],
 )
 @injector.inject
-@specs.validate(body=cfgdto.DeleteRouteDTO, resp=Response("HTTP_404"))
 @login_required
 def delete(route_repo: RouteRepo):
     route_id = request.form["route_id"]
@@ -152,23 +150,23 @@ def delete(route_repo: RouteRepo):
     return redirect(url_for("main_blueprint.config"))
 
 
-# @main_blueprint.route("/", methods=["GET", "POST"])
-# @injector.inject
-# def login(term_repo: TerminalRepo):
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         terminal_id = form.terminal_id.data
-#         terminal = term_repo.get(terminal_id)
-#         if terminal is not None and terminal.is_active:
-#             session[sess_user_key] = str(terminal_id)
-#             session[sess_user_status] = str(terminal.customer_type)
-#             session[sess_user_exp] = terminal.expire_at
-#             return redirect(url_for("main_blueprint.config"))
-#         if terminal is None:
-#             flash(_("Terminal wasn't found. Check your terminal id"))
-#         elif not terminal.is_active:
-#             flash(_("Your Terminal is no longer active"))
-#     return render_template("login.html", form=form)
+@main_blueprint.route("/", methods=["GET", "POST"])
+@injector.inject
+def login(term_repo: TerminalRepo):
+    form = LoginForm()
+    if form.validate_on_submit():
+        terminal_id = form.terminal_id.data
+        terminal = term_repo.get(terminal_id)
+        if terminal is not None and terminal.is_active:
+            session[sess_user_key] = str(terminal_id)
+            session[sess_user_status] = str(terminal.customer_type)
+            session[sess_user_exp] = terminal.expire_at
+            return redirect(url_for("main_blueprint.config"))
+        if terminal is None:
+            flash(_("Terminal wasn't found. Check your terminal id"))
+        elif not terminal.is_active:
+            flash(_("Your Terminal is no longer active"))
+    return render_template("login.html", form=form)
 
 
 @main_blueprint.route("/logout", methods=("GET",))

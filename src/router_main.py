@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import sys
 from typing import List, Optional
 
 import dotenv
+from loguru import logger
 from sqlalchemy import create_engine
 
 from tradecopier.application.use_case.receiving_message import \
@@ -22,7 +25,9 @@ from tradecopier.infrastructure.repositories.terminal_repo import \
 def get_db_connection():
     engine = create_engine(os.environ["DB_DSN"])
     create_db(engine)
+    logger.debug("db created")
     db_conn = engine.connect()
+    logger.debug("sql engine connected")
     return db_conn
 
 
@@ -36,6 +41,7 @@ def main(argv: Optional[List[str]]) -> None:
         os.path.join(os.path.dirname(__file__), os.pardir, ".env"),
     )
     dotenv.load_dotenv(config_path)
+    logger.add(sys.stderr, level=f"{os.getenv('LOG_LEVEL')}")
     wsca = WebSocketsConnectionAdapter()
     db_conn = get_db_connection()
     rec_msg_presenter = ReceivingMessagePresenter()
@@ -51,6 +57,7 @@ def main(argv: Optional[List[str]]) -> None:
     )
 
     start_server = wsca.start_server(uc, rec_msg_presenter)
+    logger.info("Starting the server")
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

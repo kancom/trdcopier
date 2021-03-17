@@ -2,10 +2,11 @@ from typing import Any, Dict, List, Optional
 
 import flask_injector
 import injector
-from tradecopier.application.repositories.route_repo import RouteRepo
-from tradecopier.application.repositories.terminal_repo import TerminalRepo
-from tradecopier.application.use_case.adding_route import (AddingRouteBoundary,
-                                                           AddingRouteUseCase)
+
+from .domain.entities.terminal import Terminal
+from .repositories.route_repo import RouteRepo
+from .repositories.terminal_repo import TerminalRepo
+from .use_case.adding_route import AddingRouteBoundary, AddingRouteUseCase
 
 __all__ = ["AddingRouteUseCase", "WebApp"]
 

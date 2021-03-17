@@ -1,0 +1,40 @@
+[log]
+    level = "DEBUG"
+
+[providers]
+  [providers.docker]
+    watch = true
+    exposedbydefault = false
+
+  [providers.file]
+    filename = "/etc/traefik/dyn-config.toml"
+
+[entryPoints]
+  # [entryPoints.http]
+  #   address = ":80"
+  [entryPoints.https]
+    address = ":443"
+
+# [api]
+  # dashboard = true
+  # insecure = true
+
+# [http.routers.my-api]
+#   # rule = "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+#   service = "api@internal"
+#   # middlewares = ["auth"]
+
+[file]
+    watch = true
+
+[accessLog]
+    filePath = "/tmp/access.log"
+    format = "CLF"
+    bufferingSize = 100
+
+# [http.middlewares]
+#   [http.middlewares.test-auth.basicAuth]
+#   users = [
+#     "admin:{SHA}KklBx8JBISRqU/Ehhkv7Vvwu/Tw=", 
+#   ]
+  # admin2021

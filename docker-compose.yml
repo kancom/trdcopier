@@ -1,0 +1,169 @@
+version: '3.8'
+
+x-log-rotation: &log-rotation
+  # driver: "json-file"
+  options:
+    max-size: "200k"
+    max-file: "3"
+
+x-container-ulimits: &container-ulimits
+  nproc: 20000
+  nofile:
+    soft: 10000
+    hard: 20000
+
+x-access-from-traefik: &access-from-traefik
+  - traefik.enable: True
+  # traefik.docker.network: cloud_private
+
+services:
+  #================================API GW=========================================
+
+  apigw:
+    image: traefik:v2.4
+    networks:
+      - cloud_private
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - $PWD/deploy/traefik/api_gw_volume.traefik.toml:/etc/traefik/traefik.toml
+      - $PWD/deploy/traefik/dyn-config.toml:/etc/traefik/dyn-config.toml
+      - $PWD/deploy/traefik/api_gw_volume.access.log:/tmp/access.log
+      - "/data/certs:/certs:ro"
+    logging:
+      <<: *log-rotation
+
+  gitlab:
+    image: gitlab/gitlab-ce:13.7.8-ce.0
+    depends_on:
+      - apigw
+    networks:
+      - cloud_private
+    restart: always
+    hostname: 'tickhub.space'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://tickhub.space/gitlab'
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = "smtp.yandex.ru"
+        gitlab_rails['smtp_port'] = 465
+        gitlab_rails['smtp_user_name'] = "robot@tickhub.space"
+        gitlab_rails['smtp_password'] = "${SMTP_PASS}"
+        gitlab_rails['smtp_domain'] = "tickhub.space"
+        gitlab_rails['gitlab_email_from'] = "robot@tickhub.space" 
+        gitlab_rails['smtp_authentication'] = "login"
+        gitlab_rails['smtp_tls'] = true
+        gitlab_rails['smtp_enable_starttls_auto'] = true
+        gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitlab.rule=PathPrefix(`/gitlab`)"
+      - "traefik.http.routers.gitlab.entrypoints=https"
+      - "traefik.http.middlewares.gitlab-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.gitlab-ratelimit.ratelimit.burst=150"
+      - "traefik.http.middlewares.gitlab-ratelimit.ratelimit.period=1m"
+      - "traefik.http.routers.gitlab.tls=true"
+      - "traefik.http.routers.gitlab.middlewares=gitlab-ratelimit@docker"
+      - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+    volumes:
+      - $VOLUME/gitlab/config:/etc/gitlab
+      - $VOLUME/gitlab/logs:/var/log/gitlab
+      - $VOLUME/gitlab/data:/var/opt/gitlab
+    logging:
+      <<: *log-rotation
+
+  # ================================database service===================================
+  db:
+    image: mysql:8.0.23
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: copier
+      MYSQL_USER: copier
+      MYSQL_PASSWORD: ${DB_PASS}
+    networks:
+      - cloud_private
+    restart: on-failure
+    volumes:
+      - $VOLUME/mysql/:/var/lib/mysql
+    logging:
+      <<: *log-rotation
+
+  # ================================WebSocket service===================================
+  router:
+    image: copier:dev
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      - apigw
+      - db
+    networks:
+      - cloud_private
+    restart: on-failure
+    environment:
+      - DB_DSN
+      - "LOG_LEVEL=${LOG_LEVEL:-INFO}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.router.rule=PathPrefix(`/ws`)"
+      - "traefik.http.routers.router.entrypoints=https"
+      - "traefik.http.services.router.loadbalancer.server.port=6789"
+      - "traefik.http.middlewares.router-ratelimit.ratelimit.average=5"
+      - "traefik.http.middlewares.router-ratelimit.ratelimit.burst=5"
+      - "traefik.http.middlewares.router-ratelimit.ratelimit.period=1m"
+      - "traefik.http.routers.router.middlewares=router-ratelimit@docker"
+    logging:
+      <<: *log-rotation
+    command: pipenv run python src/router_main.py
+    # command: /bin/sleep 1000
+  # ================================rest API service===================================
+  restapi:
+    image: copier:dev
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      - apigw
+      - db
+    networks:
+      - cloud_private
+    restart: on-failure
+    environment:
+      - DB_DSN
+      - SECRET_KEY
+      - TOKEN_EXPIRE_DAYS
+      - API_PREFIX
+      - API_V1_STR
+      - PROJECT_NAME
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.restapi.rule=PathPrefix(`$API_PREFIX`)"
+      - "traefik.http.routers.restapi.entrypoints=https"
+      - "traefik.http.routers.restapi.tls=true"
+      - "traefik.http.middlewares.restapi-ratelimit.ratelimit.average=20"
+      - "traefik.http.middlewares.restapi-ratelimit.ratelimit.burst=20"
+      - "traefik.http.middlewares.restapi-ratelimit.ratelimit.period=1m"
+      - "traefik.http.routers.restapi.middlewares=restapi-ratelimit@docker"
+      - "traefik.http.services.restapi.loadbalancer.server.port=8000"
+    logging:
+      <<: *log-rotation
+    command: pipenv run python src/rest_main.py
+    # command: /bin/sleep 2000
+    healthcheck:
+      test: "curl --fail http://localhost:8000${API_PREFIX}/docs || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s     
+
+
+networks:
+
+  cloud_private:
+    # Set explicitly to remove stack name prefix, because traefik accepts only static network names
+    name: cloud_private

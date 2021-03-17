@@ -3,6 +3,7 @@ import json
 from typing import Dict, Iterable, List, Tuple
 
 import websockets as ws
+from loguru import logger
 from tradecopier.application.adapters.connection_adapter import \
     ConnectionHandlerAdapter
 from tradecopier.application.domain.entities.message import (IncomingMessage,
@@ -28,7 +29,7 @@ class ReceivingMessagePresenter(ReceivingMessageBoundary):
 
 
 class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
-    def __init__(self, host: str = "localhost", port: int = 6789):
+    def __init__(self, host: str = "", port: int = 6789):
         self._host = host
         self._port = port
         self._server: ws.Serve = None
@@ -40,7 +41,11 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         async def consumer_handler(in_ws: ws.WebSocketServerProtocol, path: str):
             try:
                 async for message in in_ws:
-                    print(type(message), message, in_ws, path)
+                    logger.debug(
+                        "{!r}, {!r}, {!r}, {!r}".format(
+                            type(message), message, in_ws, path
+                        )
+                    )
                     inc_message = IncomingMessage(**json.loads(message))
                     uc.execute(inc_message)
                     for seq in presenter:
@@ -72,10 +77,11 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         self, uc: ReceivingMessageUseCase, presenter: ReceivingMessagePresenter
     ):
         self._server = ws.serve(self._callback(uc, presenter), self._host, self._port)
+        logger.debug(str(self._server))
         return self._server
 
     def disconnect(self, terminal_id: TerminalId):
-        print("disconnect")
+        logger.info("disconnect")
         assert str(terminal_id) in self._ws_register, "not known"
         self._ws_register[str(terminal_id)].close()
 

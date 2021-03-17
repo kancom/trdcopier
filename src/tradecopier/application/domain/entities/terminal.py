@@ -21,7 +21,8 @@ class Terminal(BaseModel):
 
     @property
     def str_id(self):
-        return self.name if self.name is not None and self.name != "" else self.broker
+        name = self.name if self.name is not None and self.name != "" else self.broker
+        return name + "|" + self.terminal_id.hex[-12:]
 
     @property
     def expiration(self):

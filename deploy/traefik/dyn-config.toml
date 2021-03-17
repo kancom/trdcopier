@@ -1,0 +1,5 @@
+[tls]
+
+  [[tls.certificates]]
+    certFile = "/certs/tickhub.space.cert"
+    keyFile = "/certs/tickhub.space.key"
