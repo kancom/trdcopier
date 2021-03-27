@@ -25,6 +25,8 @@ class SqlAlchemyRuleRepo(RuleRepo):
                 return float(val[6:])
             elif val.startswith("int:"):
                 return int(val[4:])
+            else:
+                raise ValueError("Unsupported type prefix")
 
         rules_db = self._conn.execute(
             RuleModel.select().where(RuleModel.c.terminal_id == terminal_id)
@@ -65,6 +67,8 @@ class SqlAlchemyRuleRepo(RuleRepo):
                 return f"float:{val}"
             elif isinstance(val, int):
                 return f"int:{val}"
+            else:
+                raise ValueError("Unsupported type")
 
         getter: Generator[Rule, None, None]
         if isinstance(rule, ComplexRule):
@@ -84,7 +88,7 @@ class SqlAlchemyRuleRepo(RuleRepo):
                         "is_transform": is_transform,
                         "field": rule_expr["field"],
                         "value": enrigh_type(rule_expr["value"]),
-                        "operator": rule_expr["operator"],
+                        "operator": int(rule_expr["operator"]),
                     }
                 )
             )

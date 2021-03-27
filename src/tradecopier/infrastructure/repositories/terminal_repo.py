@@ -48,4 +48,6 @@ class SqlAlchemyTerminalRepo(TerminalRepo):
             insert_res = self._conn.execute(
                 TerminalModel.insert(values=terminal.dict())
             )
+        elif update_res.rowcount > 1:
+            raise Exception("More than one row updated")
         return terminal.terminal_id

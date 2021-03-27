@@ -1,10 +1,13 @@
 from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, validator
-from tradecopier.application import AddingRouteUseCase, RouteRepo, Terminal
-from tradecopier.application.domain.value_objects import (RouteId, RouteStatus,
+from tradecopier.application import Terminal
+from tradecopier.application.domain.value_objects import (FilterOperation,
+                                                          RouteId, RouteStatus,
                                                           TerminalBrand,
-                                                          TerminalId)
+                                                          TerminalId,
+                                                          TerminalIdLen,
+                                                          TransformOperation)
 
 
 class Token(BaseModel):
@@ -46,3 +49,21 @@ class RoutesPresenter(BaseModel):
     current_terminal: Terminal
     peers_type: Literal["sources", "destinations"]
     peers: List[RoutePeer]
+
+
+class PeerTerminalId(BaseModel):
+    identifier: str = Field(regex=r"[a-fA-F0-9\-]{12,36}")
+
+
+class RuleDTO(BaseModel):
+    number: int = Field(gt=0, lt=100, example=1)
+    rule_type: Literal["filter", "transform"]
+    field: str = Field(min_length=3, max_length=20, example="price")
+    operator: Union[TransformOperation, FilterOperation, None] = Field(
+        example=TransformOperation.ADD
+    )
+    value: Union[float, int, str, None] = Field(example=123.123)
+
+
+class Rules(BaseModel):
+    rules: List[RuleDTO] = Field(default_factory=list)

@@ -5,7 +5,9 @@ import factories
 import pytest
 from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.entities.rule import (ComplexRule,
-                                                          FilterRule)
+                                                          Expression,
+                                                          FilterRule,
+                                                          TransformRule)
 from tradecopier.application.domain.value_objects import (
     CustomerType, EntityNotFoundException, RouteStatus, TerminalType)
 from tradecopier.infrastructure.repositories.route_repo import \
@@ -94,6 +96,12 @@ def test_rule_repo(rule_table, sql_conn, rule_expression_factory, terminal_facto
     exprs = rule_expression_factory.create_batch(3)
     for expr in exprs:
         cr.push_rule(FilterRule(terminal.terminal_id, expr))
+    cr.push_rule(
+        TransformRule(
+            terminal.terminal_id,
+            Expression(field="reverse", value=None, operator=None),
+        )
+    )
     repo.save(cr)
     cr_from_db = repo.get(terminal.terminal_id)
     assert cr_from_db == cr

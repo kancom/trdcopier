@@ -1,16 +1,69 @@
-import itertools
 import operator
+import uuid
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from tradecopier.application import AddingRouteUseCase, RouteRepo, Terminal
-from tradecopier.application.domain.value_objects import TerminalType
+from fastapi import APIRouter, Depends, HTTPException, status
+from tradecopier.application import RouteRepo, RuleRepo, Terminal, TerminalRepo
+from tradecopier.application.domain.entities.rule import (ComplexRule,
+                                                          FilterRule,
+                                                          TransformRule)
+from tradecopier.application.domain.value_objects import (TerminalIdLen,
+                                                          TerminalType)
 from tradecopier.restapi.deps import Container
+from tradecopier.restapi.dto.objects import (PeerTerminalId, RoutePeer,
+                                             RoutesPresenter, RuleDTO, Rules)
 
-from ...dto.objects import RoutePeer, RoutesPresenter
 from .auth import get_current_active_terminal
 
 router = APIRouter()
+
+
+@router.get("/rules", response_model=Rules)
+@inject
+def rules(
+    terminal: Terminal = Depends(get_current_active_terminal),
+    rule_repo: RuleRepo = Depends(Provide[Container.rule_repo]),
+):
+    def fill_single_rule(nb, rule):
+        nb += 1
+        rule_type = "filter" if isinstance(rule, FilterRule) else "transform"
+        field = rule.applies_to
+        operator = rule.operator
+        value = rule.value
+        return RuleDTO(
+            number=nb, rule_type=rule_type, operator=operator, field=field, value=value
+        )
+
+    rules = rule_repo.get(terminal.terminal_id)
+    result: Rules = Rules()
+    if isinstance(rules, ComplexRule):
+        for nb, rule in enumerate(rules.generator()):
+            result.rules.append(fill_single_rule(nb, rule))
+    elif isinstance(rules, (FilterRule, TransformRule)):
+        result.rules.append(fill_single_rule(0, rules))
+    return result
+
+
+@router.get("/peer", response_model=str)
+@inject
+def peer_terminal(
+    terminal_id: PeerTerminalId = Depends(PeerTerminalId),
+    terminal: Terminal = Depends(get_current_active_terminal),
+    terminal_repo: TerminalRepo = Depends(Provide[Container.terminal_repo]),
+):
+    if len(terminal_id.identifier) == TerminalIdLen:
+        peer_terminal = terminal_repo.get(uuid.UUID(terminal_id.identifier))
+    elif len(terminal_id.identifier) == 12:
+        peer_terminal = terminal_repo.get_by_tail(terminal_id.identifier)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="invalid identifier"
+        )
+    if peer_terminal is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="no terminal found"
+        )
+    return peer_terminal.str_id
 
 
 @router.get("/terminal", response_model=Terminal)

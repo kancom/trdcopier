@@ -1,5 +1,6 @@
 import pydantic
 import pytest
+from pydantic import ValidationError
 from tradecopier.application.domain.entities.rule import (ComplexRule,
                                                           Expression,
                                                           FilterRule,
@@ -7,6 +8,16 @@ from tradecopier.application.domain.entities.rule import (ComplexRule,
 from tradecopier.application.domain.value_objects import (FilterOperation,
                                                           OrderType,
                                                           TransformOperation)
+
+
+def test_expression():
+    with pytest.raises(
+        ValidationError, match="field and operator can not be None simultaneously"
+    ):
+        Expression(field=None, value=None, operator=None)
+    expr = Expression(field="reverse", value=None, operator=None)
+    assert expr.operator == TransformOperation.REVERSE
+    assert expr.field == ""
 
 
 def test_transform_reverse(trade_message_factory, terminal_factory):
@@ -22,6 +33,9 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
         transformed_msg.body.tp < transformed_msg.body.price < transformed_msg.body.sl
     )
     assert transformed_msg.body.order_type == OrderType.ORDER_TYPE_SELL
+    assert tr.applies_to == "reverse"
+    assert tr.operator is None
+    assert tr.value is None
 
 
 def test_transform_append(trade_message_factory, terminal_factory):
@@ -32,6 +46,9 @@ def test_transform_append(trade_message_factory, terminal_factory):
     msg = trade_message_factory()
     transformed_msg = tr.apply(msg)
     assert add_text in transformed_msg.body.comment
+    assert tr.applies_to == "comment"
+    assert tr.operator == TransformOperation.APPEND
+    assert tr.value == add_text
 
 
 def test_filter_lt(trade_message_factory, terminal_factory):
@@ -45,6 +62,9 @@ def test_filter_lt(trade_message_factory, terminal_factory):
             assert fr.apply(msg) is not None
         else:
             assert fr.apply(msg) is None
+    assert fr.applies_to == "magic"
+    assert fr.operator == FilterOperation.LT
+    assert fr.value == f_value
 
 
 def test_filter_eq(trade_message_factory, terminal_factory):

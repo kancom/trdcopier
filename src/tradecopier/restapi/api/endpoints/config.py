@@ -1,10 +1,13 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from tradecopier.application import AddingRouteUseCase, RouteRepo, Terminal
+from tradecopier.application import (AddingRouteUseCase, ComplexRule,
+                                     Expression, FilterRule, RouteRepo,
+                                     RuleRepo, Terminal, TransformRule)
 from tradecopier.application.domain.value_objects import (
     EntityNotFoundException, RouteId, RouteStatus, TerminalType)
 from tradecopier.application.use_case.adding_route import AddingRouteBoundary
 from tradecopier.restapi.deps import Container
+from tradecopier.restapi.dto.objects import Rules
 
 from ...dto.objects import RouteEndpoints
 from .auth import get_current_active_terminal
@@ -12,9 +15,28 @@ from .auth import get_current_active_terminal
 router = APIRouter()
 
 
+@router.post("/rule", status_code=status.HTTP_201_CREATED)
+@inject
+def set_rules(
+    rules_dto: Rules,
+    terminal: Terminal = Depends(get_current_active_terminal),
+    rule_repo: RuleRepo = Depends(Provide(Container.rule_repo)),
+):
+    complex_rule = ComplexRule(terminal.terminal_id)
+    for rule in rules_dto.rules:
+        expr = Expression(field=rule.field, value=rule.value, operator=rule.operator)
+        if rule.rule_type == "filter":
+            complex_rule.push_rule(FilterRule(terminal.terminal_id, expr))
+        elif rule.rule_type == "transform":
+            complex_rule.push_rule(TransformRule(terminal.terminal_id, expr))
+        else:
+            raise ValueError("Unsupported rule type")
+    rule_repo.save(complex_rule)
+
+
 @router.post("/route", status_code=status.HTTP_201_CREATED)
 @inject
-def add(
+def add_route(
     route_endpoints: RouteEndpoints,
     terminal: Terminal = Depends(get_current_active_terminal),
     route_repo: RouteRepo = Depends(Provide(Container.route_repo)),
@@ -67,7 +89,7 @@ def add(
 
 @router.delete("/route/{route_id}", status_code=status.HTTP_204_NO_CONTENT)
 @inject
-def delete(
+def delete_route(
     route_id: RouteId,
     terminal: Terminal = Depends(get_current_active_terminal),
     route_repo: RouteRepo = Depends(Provide(Container.route_repo)),

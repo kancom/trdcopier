@@ -59,7 +59,7 @@ class ReceivingMessageUseCase:
         routes = self._route_repo.get_by_terminal_id(
             src_terminal_id, term_type=TerminalType.SOURCE
         )
-        if (src_rule := self._rule_repo.get_by_terminal_id(src_terminal_id)) is None:
+        if (src_rule := self._rule_repo.get(src_terminal_id)) is None:
             raise EntityNotFoundException(
                 f"rule for terminal {src_terminal_id} not found"
             )

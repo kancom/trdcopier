@@ -63,7 +63,9 @@ async def get_current_active_terminal(
     current_terminal: Terminal = Depends(get_current_terminal),
 ):
     if not current_terminal.is_active:
-        raise HTTPException(status_code=400, detail="Inactive terminal")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive terminal"
+        )
     return current_terminal
 
 

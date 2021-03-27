@@ -3,7 +3,7 @@ import operator
 from decimal import Decimal
 from typing import Generator, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from tradecopier.application.domain.entities.message import InTradeMessage
 from tradecopier.application.domain.entities.order import Order
 from tradecopier.application.domain.value_objects import (FilterOperation,
@@ -12,37 +12,77 @@ from tradecopier.application.domain.value_objects import (FilterOperation,
                                                           TransformOperation)
 
 
+class Expression(BaseModel):
+    field: Union[str, None]
+    value: Union[float, int, str, None]
+    operator: Union[FilterOperation, TransformOperation, None]
+
+    @validator("operator")
+    def validate_operator(cls, v, values):
+        if v is None and values["field"] is None:
+            raise ValueError("field and operator can not be None simultaneously")
+        if values["field"] == "reverse":
+            values["field"] = ""
+            values["value"] = ""
+            return TransformOperation.REVERSE
+        return v
+
+
 class Rule:
     terminal_id: TerminalId
+
+    def __init__(self, terminal_id: TerminalId, expr: Expression):
+        self.terminal_id = terminal_id
+        self._expr = expr
 
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
         return message
 
     def dict(self):
-        raise NotImplementedError("not implemented")
+        return self._expr.dict()
 
+    @property
+    def applies_to(self) -> str:
+        return self._expr.field or "not yet initialized"
 
-class Expression(BaseModel):
-    field: Union[str, None]
-    value: Union[int, float, str, None]
-    operator: Union[FilterOperation, TransformOperation]
+    @property
+    def value(self):
+        return self._expr.value
+
+    @property
+    def operator(self):
+        return self._expr.operator
 
 
 class TransformRule(Rule):
-    def __init__(self, terminal_id: TerminalId, expr: Expression):
-        self.terminal_id = terminal_id
-        self._expr = expr
-
     def __eq__(self, other):
         if not isinstance(other, TransformRule):
             return False
         return (self.terminal_id == other.terminal_id) and (self._expr == other._expr)
 
-    def dict(self):
-        return self._expr.dict()
+    @property
+    def applies_to(self) -> str:
+        if self._expr.operator == TransformOperation.REVERSE:
+            return "reverse"
+        return super().applies_to
+
+    @property
+    def value(self):
+        if self._expr.operator == TransformOperation.REVERSE:
+            return None
+        return self._expr.value
+
+    @property
+    def operator(self):
+        if self._expr.operator == TransformOperation.REVERSE:
+            return None
+        return self._expr.operator
 
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
-        if self._expr.operator == TransformOperation.APPEND:
+        if (
+            self._expr.operator == TransformOperation.APPEND
+            and self._expr.field is not None
+        ):
             field_value = getattr(message.body, self._expr.field)
             field_value = (
                 field_value + self._expr.value
@@ -130,19 +170,18 @@ class FilterRule(Rule):
                     )
         return False
 
-    def __init__(self, terminal_id: TerminalId, expr: Expression):
-        self.terminal_id = terminal_id
-        self._expr = expr
-
     def __eq__(self, other):
         if not isinstance(other, FilterRule):
             return False
         return (self.terminal_id == other.terminal_id) and (self._expr == other._expr)
 
-    def dict(self):
-        return self._expr.dict()
-
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
+        if (
+            self._expr.field is None
+            or self._expr.operator is None
+            or not isinstance(self._expr.operator, FilterOperation)
+        ):
+            return None
         field_value = getattr(message.body, self._expr.field)
         filter_result = True
         if self._expr.operator == FilterOperation.IN:

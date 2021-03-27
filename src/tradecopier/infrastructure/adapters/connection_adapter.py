@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 import websockets as ws
 from loguru import logger
@@ -32,7 +32,7 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
     def __init__(self, host: str = "", port: int = 6789):
         self._host = host
         self._port = port
-        self._server: ws.Serve = None
+        self._server: Union[ws.server.Serve, None] = None
         self._ws_register: Dict[str, ws.WebSocketServerProtocol] = {}
 
     def _callback(
@@ -92,7 +92,7 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         async def _send_message(ws, message: OutgoingMessage):
             await ws.send(json.dumps(message.dict()))
 
-        print("send", str(message))
+        logger.debug(f"send: {message}")
         loop = asyncio.get_event_loop()
         asyncio.ensure_future(
             _send_message(self._ws_register[str(terminal_id)], message), loop=loop

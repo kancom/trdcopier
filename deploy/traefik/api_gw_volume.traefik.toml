@@ -14,6 +14,8 @@
   #   address = ":80"
   [entryPoints.https]
     address = ":443"
+  [entryPoints.ssh]
+    address = ":2200"
 
 # [api]
   # dashboard = true

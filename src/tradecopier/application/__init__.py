@@ -1,14 +1,26 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import flask_injector
 import injector
 
+from .domain.entities.rule import (ComplexRule, Expression, FilterRule,
+                                   TransformRule)
 from .domain.entities.terminal import Terminal
 from .repositories.route_repo import RouteRepo
+from .repositories.rule_repo import RuleRepo
 from .repositories.terminal_repo import TerminalRepo
 from .use_case.adding_route import AddingRouteBoundary, AddingRouteUseCase
 
-__all__ = ["AddingRouteUseCase", "WebApp"]
+__all__ = [
+    "AddingRouteUseCase",
+    "WebApp",
+    "TerminalRepo",
+    "RuleRepo",
+    "Terminal",
+    "FilterRule",
+    "TransformRule",
+    "Expression",
+]
 
 
 class AddingRoutePresenter(AddingRouteBoundary):

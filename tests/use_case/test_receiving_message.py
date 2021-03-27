@@ -135,7 +135,7 @@ def test_resceiving_trade_msg_no_rules(
     trd_msg.message = factories.TradeMessageFactory()
 
     wsca.is_connected.return_value = False
-    rule_repo.get_by_terminal_id.return_value = None
+    rule_repo.get.return_value = None
 
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
@@ -148,7 +148,7 @@ def test_resceiving_trade_msg_no_rules(
     uc.execute(trd_msg)
 
     # is not active, thus - no processing
-    rule_repo.get_by_terminal_id.assert_not_called()
+    rule_repo.get.assert_not_called()
 
     # no src rule - exception
     src_term = factories.TerminalFactory(customer_type=CustomerType.SILVER)
@@ -192,6 +192,6 @@ def test_resceiving_trade_msg_with_rules(
     src_term.id = trd_msg.message.terminal_id
     customer.add_source(src_term)
     uc.execute(trd_msg)
-    rule_repo.get_by_terminal_id.assert_called()
+    rule_repo.get_by.assert_called()
     wsca.send_message.assert_called()
-    rule_repo.get_by_terminal_id.return_value = None
+    rule_repo.get.return_value = None
