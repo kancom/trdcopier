@@ -1,0 +1,25 @@
+image: python:3.8-slim 
+
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  key: "${CI_JOB_NAME}"
+  paths:
+    - .cache/pip
+    - venv/
+
+testing:
+  stage: test
+  script:
+    - apt update
+    - apt install make
+    - pip install pipenv
+    - make install-dev
+    - make test

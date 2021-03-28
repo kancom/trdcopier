@@ -42,6 +42,7 @@ services:
     image: gitlab/gitlab-ce:13.7.8-ce.0
     depends_on:
       - apigw
+      - gitlab-runner
     networks:
       - cloud_private
     restart: always
@@ -84,6 +85,14 @@ services:
       - $VOLUME/gitlab/data:/var/opt/gitlab
     logging:
       <<: *log-rotation
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    restart: always
+    volumes:
+      - $VOLUME/gitlab-runner/config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+
 
   # ================================database service===================================
   db:

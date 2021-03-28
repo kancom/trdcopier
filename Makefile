@@ -9,6 +9,7 @@ help: ## show this help
 ########################################################################
 install-dev: ## install base and dev dependencies
 	pipenv install --dev
+	pipenv install -e .
 
 ########################################################################
 # code quality
