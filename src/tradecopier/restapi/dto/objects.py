@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 from tradecopier.application import Terminal
@@ -6,7 +6,6 @@ from tradecopier.application.domain.value_objects import (FilterOperation,
                                                           RouteId, RouteStatus,
                                                           TerminalBrand,
                                                           TerminalId,
-                                                          TerminalIdLen,
                                                           TransformOperation)
 
 
@@ -67,3 +66,10 @@ class RuleDTO(BaseModel):
 
 class Rules(BaseModel):
     rules: List[RuleDTO] = Field(default_factory=list)
+
+
+class PermittedRules(BaseModel):
+    transform_operation_map: Dict[str, List[str]]
+    filter_operation_map: Dict[str, List[str]]
+    fields: Dict[str, str]
+    enums: Dict[str, Dict[int, str]]

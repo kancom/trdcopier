@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -8,41 +8,39 @@ from ..value_objects import (OrderType, OrderTypeFilling, Symbol, TradeAction,
 
 
 class Order(BaseModel):
-    filterable = [
-        "action",
-        "symbol",
-        "magic",
-        "volume",
-        "price",
-        "stoplimit",
-        "sl",
-        "tp",
-        "order_type",
-        "order_type_filling",
-        "comment",
-    ]
-    translateable = [
-        "symbol",
-        "magic",
-        "action",
-        "volume",
-        "price",
-        "stoplimit",
-        "sl",
-        "tp",
-    ]
-    risk_mgmt_realated = [
-        "volume",
-        "sl",
-        "tp",
-    ]
+    # filterable = [
+    #     "symbol",
+    #     "magic",
+    #     "volume",
+    #     "volume_percent",
+    #     "price",
+    #     "stoplimit",
+    #     "sl",
+    #     "sl_percent",
+    #     "tp",
+    #     "tp_percent",
+    #     "order_type",
+    #     "order_type_filling",
+    #     "comment",
+    # ]
+    # transformable = [
+    #     "symbol",
+    #     "magic",
+    #     "volume",
+    #     "volume_percent",
+    #     "price",
+    #     "stoplimit",
+    #     "sl",
+    #     "sl_percent",
+    #     "tp",
+    #     "tp_percent",
+    # ]
 
     action: TradeAction = Field(
         description="Trade operation type. Can be one of the ENUM_TRADE_REQUEST_ACTIONS enumeration values."
     )
     symbol: Symbol = Field(
         description="Symbol of the order. It is not necessary for order modification and position close operations.",
-        filterable=True,
     )
     magic: int = Field(
         ge=0,
@@ -52,6 +50,9 @@ class Order(BaseModel):
     volume: float = Field(
         ge=0,
         description="Requested order volume in lots. Note that the real volume of a deal will depend on the order execution type.",
+    )
+    volume_percent: float = Field(
+        ge=0, le=100, description="Same as volume, but expressed in percents of deposit"
     )
     price: float = Field(
         ge=0,
@@ -64,9 +65,15 @@ class Order(BaseModel):
     sl: Optional[float] = Field(
         ge=0, description="Stop Loss price in case of the unfavorable price movement"
     )
+    sl_percent: Optional[float] = Field(
+        ge=0, le=100, description="Same as sl, but expressed in percents of deposit"
+    )
     tp: Optional[float] = Field(
         ge=0,
         description="Take Profit price in the case of the favorable price movement",
+    )
+    tp_percent: Optional[float] = Field(
+        ge=0, le=100, description="Same as tp, but expressed in percents of deposit"
     )
     deviation: Optional[int] = Field(
         ge=0, description="The maximal price deviation, specified in points"
@@ -90,6 +97,34 @@ class Order(BaseModel):
     position_by: Optional[int] = Field(
         description="Ticket of an opposite position. Used when a position is closed by an opposite one open for the same symbol in the opposite direction."
     )
+
+    @classmethod
+    def get_field_type_mapping(cls) -> Dict[str, str]:
+        result = {}
+        schema = cls.schema()
+        for k, v in schema["properties"].items():
+            if "type" in v:
+                if v["type"] == "number":
+                    result[k] = "float"
+                else:
+                    result[k] = v["type"]
+            else:
+                result[k] = v["allOf"][0]["$ref"]
+        return result
+
+    @classmethod
+    def get_enums(cls) -> Dict[str, Dict[int, str]]:
+        result: Dict[str, Dict[int, str]] = {}
+        schema = cls.schema()
+        for k, v in schema["properties"].items():
+            if "type" in v:
+                continue
+            type_name = v["allOf"][0]["$ref"].split("/")[-1]
+            result[type_name] = {}
+            for val in schema["definitions"][type_name]["enum"]:
+                result[type_name][val] = eval(type_name)(val)
+
+        return result
 
     def __hash__(self):
         return hash(

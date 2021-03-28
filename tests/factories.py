@@ -59,6 +59,7 @@ class OrderFactory(factory.Factory):
     magic = factory.fuzzy.FuzzyInteger(1, 100)
     order_ticket = factory.fuzzy.FuzzyInteger(1, 100)
     volume = factory.fuzzy.FuzzyFloat(10)
+    volume_percent = factory.fuzzy.FuzzyFloat(100)
     price = factory.fuzzy.FuzzyFloat(10, 50)
     order_type = vo.OrderType.ORDER_TYPE_BUY
     order_type_filling = vo.OrderTypeFilling.ORDER_FILLING_FOK

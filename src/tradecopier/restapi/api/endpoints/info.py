@@ -3,19 +3,39 @@ import uuid
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
-from tradecopier.application import RouteRepo, RuleRepo, Terminal, TerminalRepo
+from tradecopier.application import (Order, RouteRepo, RuleRepo, Terminal,
+                                     TerminalRepo)
 from tradecopier.application.domain.entities.rule import (ComplexRule,
                                                           FilterRule,
                                                           TransformRule)
-from tradecopier.application.domain.value_objects import (TerminalIdLen,
-                                                          TerminalType)
+from tradecopier.application.domain.value_objects import (
+    TerminalIdLen, TerminalType, type_filter_operation_map,
+    type_transform_operation_map)
 from tradecopier.restapi.deps import Container
-from tradecopier.restapi.dto.objects import (PeerTerminalId, RoutePeer,
-                                             RoutesPresenter, RuleDTO, Rules)
+from tradecopier.restapi.dto.objects import (PeerTerminalId, PermittedRules,
+                                             RoutePeer, RoutesPresenter,
+                                             RuleDTO, Rules)
 
 from .auth import get_current_active_terminal
 
 router = APIRouter()
+
+
+@router.get("/permitted_rules", response_model=PermittedRules)
+def permitted_rules():
+    result = PermittedRules(
+        transform_operation_map={
+            f"{str(k)}:{int(k)}": [str(l) for l in v]
+            for k, v in type_transform_operation_map.items()
+        },
+        filter_operation_map={
+            str(k): [f"{str(l)}:{int(l)}" for l in v]
+            for k, v in type_filter_operation_map.items()
+        },
+        fields=Order.get_field_type_mapping(),
+        enums=Order.get_enums(),
+    )
+    return result
 
 
 @router.get("/rules", response_model=Rules)

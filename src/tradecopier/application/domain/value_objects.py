@@ -53,6 +53,29 @@ class FilterOperation(IntEnum):
     IN = auto()
 
 
+type_filter_operation_map = {
+    "int": [
+        FilterOperation.LT,
+        FilterOperation.LE,
+        FilterOperation.EQ,
+        FilterOperation.GE,
+        FilterOperation.GT,
+        FilterOperation.NE,
+    ],
+    "float": [
+        FilterOperation.LT,
+        FilterOperation.LE,
+        FilterOperation.EQ,
+        FilterOperation.GE,
+        FilterOperation.GT,
+        FilterOperation.NE,
+    ],
+    "str": [FilterOperation.EQ, FilterOperation.NE, FilterOperation.IN],
+    "OrderType": [FilterOperation.EQ, FilterOperation.NE],
+    "OrderTypeFilling": [FilterOperation.EQ, FilterOperation.NE],
+}
+
+
 class TransformOperation(IntEnum):
     SET = 100
     APPEND = auto()
@@ -60,6 +83,16 @@ class TransformOperation(IntEnum):
     ADD = auto()
     SETIF = auto()
     REVERSE = auto()
+
+
+type_transform_operation_map = {
+    TransformOperation.SET: ["int", "float", "str"],
+    TransformOperation.MULTIPLY: ["int", "float"],
+    TransformOperation.ADD: ["int", "float"],
+    TransformOperation.APPEND: ["str"],
+    TransformOperation.REVERSE: [],
+    # TransformOperation.SETIF:
+}
 
 
 class FilterType(IntEnum):

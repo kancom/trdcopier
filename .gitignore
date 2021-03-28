@@ -73,3 +73,4 @@ k8s/*secret*.y*ml
 .run
 .vscode
 .coverage
+.emacs.desktop
