@@ -2,7 +2,6 @@ import abc
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from flask_babel import _
 from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.entities.terminal import Terminal
 from tradecopier.application.domain.value_objects import (RouteStatus,

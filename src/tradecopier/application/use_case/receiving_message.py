@@ -72,7 +72,7 @@ class ReceivingMessageUseCase:
         for dst_terminal in destinations:
             if not self._conn_adapter.is_connected(dst_terminal.terminal_id):
                 continue
-            dst_rule = self._rule_repo.get_by_terminal_id(dst_terminal.terminal_id)
+            dst_rule = self._rule_repo.get(dst_terminal.terminal_id)
             if not dst_rule:
                 continue
             dst_msg = dst_rule.apply(src_msg)
