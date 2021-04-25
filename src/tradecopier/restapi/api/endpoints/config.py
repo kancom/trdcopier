@@ -15,7 +15,7 @@ from .auth import get_current_active_terminal
 router = APIRouter()
 
 
-@router.post("/rule", status_code=status.HTTP_201_CREATED)
+@router.post("/rules", status_code=status.HTTP_201_CREATED)
 @inject
 def set_rules(
     rules_dto: Rules,

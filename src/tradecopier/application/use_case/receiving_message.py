@@ -2,6 +2,7 @@ import abc
 from collections import defaultdict
 from typing import Iterable, List, Tuple
 
+from loguru import logger
 from tradecopier.application.adapters.connection_adapter import \
     ConnectionHandlerAdapter
 from tradecopier.application.domain.entities.message import (
@@ -64,6 +65,7 @@ class ReceivingMessageUseCase:
                 f"rule for terminal {src_terminal_id} not found"
             )
         if (src_msg := src_rule.apply(message)) is None:
+            logger.debug("rules empty src message")
             return
         destinations = set(
             [route.destination for route in routes if route.destination.is_active]
@@ -79,6 +81,8 @@ class ReceivingMessageUseCase:
             if dst_msg is not None:
                 msg = OutgoingMessage(message=dst_msg)
                 out_msgs[msg].add(dst_terminal.terminal_id)
+            else:
+                logger.debug("rules empty for dst")
         self._out_bound.present([(v, k) for k, v in out_msgs.items()])
 
     def execute(self, message: IncomingMessage):
@@ -86,6 +90,7 @@ class ReceivingMessageUseCase:
             if isinstance(message.message, RegisterMessage):
                 self._register_msg_case(message.message)
             else:
+                logger.debug("terminal is unknown, but it's not a register message")
                 self._out_bound.present(
                     [
                         (

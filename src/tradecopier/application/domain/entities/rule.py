@@ -93,31 +93,35 @@ class TransformRule(Rule):
             return message
 
         if self._expr.operator == TransformOperation.REVERSE:
+            order_type = message.body.order_type
+            if order_type in (
+                OrderType.ORDER_TYPE_CLOSE_BY,
+                OrderType.ORDER_TYPE_BUY_STOP_LIMIT,
+                OrderType.ORDER_TYPE_SELL_STOP_LIMIT,
+            ):
+                raise NotImplementedError(f"Order type {order_type} is not supported")
             sl = message.body.sl
             tp = message.body.tp
             price = message.body.price
-            order_type = message.body.order_type
-            if order_type != OrderType.ORDER_TYPE_CLOSE_BY:
-                if order_type in (
-                    OrderType.ORDER_TYPE_BUY,
-                    OrderType.ORDER_TYPE_BUY_LIMIT,
-                    OrderType.ORDER_TYPE_BUY_STOP,
-                    OrderType.ORDER_TYPE_BUY_STOP_LIMIT,
-                ):
-                    order_type = OrderType(int(order_type) + 1)  # buy -> sell
-                    if sl is not None:
-                        sl = price + (price - sl)
-                    if tp is not None:
-                        tp = price - (tp - price)
-                else:  # sell -> buy
-                    order_type = OrderType(int(order_type) - 1)
-                    if sl is not None:
-                        sl = price - (sl - price)
-                    if tp is not None:
-                        tp = price + (price - tp)
-                message.body.sl = sl
-                message.body.tp = tp
-                message.body.order_type = order_type
+            if order_type in (
+                OrderType.ORDER_TYPE_BUY,
+                OrderType.ORDER_TYPE_BUY_LIMIT,
+                OrderType.ORDER_TYPE_BUY_STOP,
+            ):
+                order_type = OrderType(int(order_type) + 1)  # buy -> sell
+                if sl is not None and sl > 0:
+                    sl = price + (price - sl)
+                if tp is not None and tp > 0:
+                    tp = price - (tp - price)
+            else:  # sell -> buy
+                order_type = OrderType(int(order_type) - 1)
+                if sl is not None and sl > 0:
+                    sl = price - (sl - price)
+                if tp is not None and tp > 0:
+                    tp = price + (price - tp)
+            message.body.sl = sl
+            message.body.tp = tp
+            message.body.order_type = order_type
             return message
         return None
 

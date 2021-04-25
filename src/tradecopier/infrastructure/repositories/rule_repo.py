@@ -55,7 +55,7 @@ class SqlAlchemyRuleRepo(RuleRepo):
         elif len(rules) == 1:
             result = rules[0]
         else:
-            result = Rule()
+            result = Rule(terminal_id, None)
         result.terminal_id = terminal_id
         return result
 

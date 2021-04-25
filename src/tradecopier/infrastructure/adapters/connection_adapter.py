@@ -39,17 +39,16 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
         self, uc: ReceivingMessageUseCase, presenter: ReceivingMessagePresenter
     ):
         async def consumer_handler(in_ws: ws.WebSocketServerProtocol, path: str):
-            try:
-                async for message in in_ws:
-                    logger.debug(
-                        "{!r}, {!r}, {!r}, {!r}".format(
-                            type(message), message, in_ws, path
-                        )
-                    )
+            async for message in in_ws:
+                logger.debug(
+                    "{!r}, {!r}, {!r}, {!r}".format(type(message), message, in_ws, path)
+                )
+                try:
                     inc_message = IncomingMessage(**json.loads(message))
                     uc.execute(inc_message)
                     for seq in presenter:
                         terminals, out_message = seq
+                        logger.debug(f"{terminals}, {out_message}")
                         for terminal_id in terminals:
                             out_ws = self._ws_register.get(str(terminal_id))
                             if (
@@ -60,11 +59,11 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
                             elif out_ws is not None:
                                 await out_ws.send(json.dumps(out_message.dict()))
                     self._register_ws(inc_message.message.terminal_id, in_ws)
-            except ws.exceptions.ConnectionClosedError as e:
-                try:
-                    del self._ws_register[str(inc_message.message.terminal_id)]
-                finally:
-                    raise Exception(str(e)) from e
+                except ws.exceptions.ConnectionClosedError as e:
+                    try:
+                        del self._ws_register[str(inc_message.message.terminal_id)]
+                    finally:
+                        raise Exception(str(e)) from e
 
         return consumer_handler
 

@@ -18,6 +18,16 @@ class TradeAction(IntEnum):
     CLOSE_BY = 5
 
 
+class OrderReason(IntEnum):
+    ORDER_REASON_CLIENT = 0
+    ORDER_REASON_MOBILE = auto()
+    ORDER_REASON_WEB = auto()
+    ORDER_REASON_EXPERT = auto()
+    ORDER_REASON_SL = auto()
+    ORDER_REASON_TP = auto()
+    ORDER_REASON_SO = auto()
+
+
 class OrderType(IntEnum):
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = auto()

@@ -41,7 +41,7 @@ def main(argv: Optional[List[str]]) -> None:
         os.path.join(os.path.dirname(__file__), os.pardir, ".env"),
     )
     dotenv.load_dotenv(config_path)
-    logger.add(sys.stderr, level=f"{os.getenv('LOG_LEVEL')}")
+    # logger.add(sys.stderr, level=f"{os.getenv('LOG_LEVEL')}")
     wsca = WebSocketsConnectionAdapter()
     db_conn = get_db_connection()
     rec_msg_presenter = ReceivingMessagePresenter()

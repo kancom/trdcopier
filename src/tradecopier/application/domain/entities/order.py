@@ -3,38 +3,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from ..value_objects import (OrderType, OrderTypeFilling, Symbol, TradeAction,
-                             TypeTime)
+from ..value_objects import (OrderReason, OrderType, OrderTypeFilling, Symbol,
+                             TradeAction, TypeTime)
 
 
 class Order(BaseModel):
-    # filterable = [
-    #     "symbol",
-    #     "magic",
-    #     "volume",
-    #     "volume_percent",
-    #     "price",
-    #     "stoplimit",
-    #     "sl",
-    #     "sl_percent",
-    #     "tp",
-    #     "tp_percent",
-    #     "order_type",
-    #     "order_type_filling",
-    #     "comment",
-    # ]
-    # transformable = [
-    #     "symbol",
-    #     "magic",
-    #     "volume",
-    #     "volume_percent",
-    #     "price",
-    #     "stoplimit",
-    #     "sl",
-    #     "sl_percent",
-    #     "tp",
-    #     "tp_percent",
-    # ]
 
     action: TradeAction = Field(
         description="Trade operation type. Can be one of the ENUM_TRADE_REQUEST_ACTIONS enumeration values."
@@ -97,6 +70,7 @@ class Order(BaseModel):
     position_by: Optional[int] = Field(
         description="Ticket of an opposite position. Used when a position is closed by an opposite one open for the same symbol in the opposite direction."
     )
+    reason: Optional[OrderReason] = Field(description="The reason for order placing")
 
     @classmethod
     def get_field_type_mapping(cls) -> Dict[str, str]:
