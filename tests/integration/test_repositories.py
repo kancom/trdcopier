@@ -9,7 +9,8 @@ from tradecopier.application.domain.entities.rule import (ComplexRule,
                                                           FilterRule,
                                                           TransformRule)
 from tradecopier.application.domain.value_objects import (
-    CustomerType, EntityNotFoundException, RouteStatus, TerminalType)
+    CustomerType, EntityNotFoundException, RouteStatus, TerminalType,
+    TransformOperation)
 from tradecopier.infrastructure.repositories.route_repo import \
     SqlAlchemyRouteRepo
 from tradecopier.infrastructure.repositories.rule_repo import \
@@ -99,7 +100,7 @@ def test_rule_repo(rule_table, sql_conn, rule_expression_factory, terminal_facto
     cr.push_rule(
         TransformRule(
             terminal.terminal_id,
-            Expression(field="reverse", value=None, operator=None),
+            Expression(field="", value="", operator=TransformOperation.REVERSE),
         )
     )
     repo.save(cr)

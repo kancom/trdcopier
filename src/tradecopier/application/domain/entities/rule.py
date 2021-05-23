@@ -21,10 +21,9 @@ class Expression(BaseModel):
     def validate_operator(cls, v, values):
         if v is None and values["field"] is None:
             raise ValueError("field and operator can not be None simultaneously")
-        if values["field"] == "reverse":
+        if v == TransformOperation.REVERSE:
             values["field"] = ""
             values["value"] = ""
-            return TransformOperation.REVERSE
         return v
 
 
@@ -61,22 +60,11 @@ class TransformRule(Rule):
         return (self.terminal_id == other.terminal_id) and (self._expr == other._expr)
 
     @property
-    def applies_to(self) -> str:
-        if self._expr.operator == TransformOperation.REVERSE:
-            return "reverse"
-        return super().applies_to
-
-    @property
     def value(self):
         if self._expr.operator == TransformOperation.REVERSE:
             return None
         return self._expr.value
 
-    @property
-    def operator(self):
-        if self._expr.operator == TransformOperation.REVERSE:
-            return None
-        return self._expr.operator
 
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
         if (

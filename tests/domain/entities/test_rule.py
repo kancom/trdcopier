@@ -15,7 +15,7 @@ def test_expression():
         ValidationError, match="field and operator can not be None simultaneously"
     ):
         Expression(field=None, value=None, operator=None)
-    expr = Expression(field="reverse", value=None, operator=None)
+    expr = Expression(field=None, value=None, operator=TransformOperation.REVERSE)
     assert expr.operator == TransformOperation.REVERSE
     assert expr.field == ""
 
@@ -33,8 +33,8 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
         transformed_msg.body.tp < transformed_msg.body.price < transformed_msg.body.sl
     )
     assert transformed_msg.body.order_type == OrderType.ORDER_TYPE_SELL
-    assert tr.applies_to == "reverse"
-    assert tr.operator is None
+    assert tr.applies_to == "not yet initialized"
+    assert tr.operator is TransformOperation.REVERSE
     assert tr.value is None
 
 
