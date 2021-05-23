@@ -26,13 +26,13 @@ class RouteEndpoints(BaseModel):
 
     @validator("source")
     def validate_src(cls, v, values):
-        if v is None and ("destination" in values and values["destination"] is None):
+        if v is None and ("destination" not in values or values["destination"] is None):
             raise ValueError("both source and destination can't be empty")
         return v
 
     @validator("destination")
     def validate_dst(cls, v, values):
-        if v is None and ("destination" in values and values["destination"] is None):
+        if v is None and ("source" not in values or values["source"] is None):
             raise ValueError("both source and destination can't be empty")
         return v
 

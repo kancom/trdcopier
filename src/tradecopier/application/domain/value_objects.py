@@ -83,6 +83,9 @@ type_filter_operation_map = {
     "str": [FilterOperation.EQ, FilterOperation.NE, FilterOperation.IN],
     "OrderType": [FilterOperation.EQ, FilterOperation.NE],
     "OrderTypeFilling": [FilterOperation.EQ, FilterOperation.NE],
+    "TradeAction": [FilterOperation.EQ, FilterOperation.NE],
+    "TypeTime": [FilterOperation.EQ, FilterOperation.NE],
+    "OrderReason": [FilterOperation.EQ, FilterOperation.NE],
 }
 
 

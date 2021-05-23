@@ -10,7 +10,11 @@ from sqlalchemy import create_engine
 from tradecopier.infrastructure.repositories.sql_model import metadata
 from tradecopier.restapi.api import api, endpoints
 from tradecopier.restapi.deps import Container
+from fastapi.middleware.cors import CORSMiddleware
 
+origins = [
+    "http://localhost:3000",
+]
 
 def get_db_connection():
     engine = create_engine(os.environ["DB_DSN"])
@@ -43,6 +47,13 @@ def main(argv: Optional[List[str]]):
         openapi_url=f"{api_url}/openapi.json",
         docs_url=f"{pfx}/docs",
     )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        )
     app.include_router(api.api_router, prefix=api_url)
     uvicorn.run(app, host="0.0.0.0", port=os.environ.get("REST_PORT", 8000))
 
