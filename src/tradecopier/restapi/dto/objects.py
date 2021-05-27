@@ -1,8 +1,10 @@
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 from tradecopier.application import Terminal
-from tradecopier.application.domain.value_objects import (FilterOperation,
+from tradecopier.application.domain.value_objects import (CustomerType,
+                                                          FilterOperation,
                                                           RouteId, RouteStatus,
                                                           TerminalBrand,
                                                           TerminalId,
@@ -42,6 +44,17 @@ class RoutePeer(BaseModel):
     terminal_brand: TerminalBrand
     status: RouteStatus
     verbose_name: str
+
+
+class TerminalDTO(BaseModel):
+    terminal_id: TerminalId
+    broker: str
+    name: Optional[str]
+    expire_at: Optional[datetime]
+    registered_at: datetime
+    customer_type: CustomerType
+    enabled: bool
+    terminal_brand: int
 
 
 class RoutesPresenter(BaseModel):

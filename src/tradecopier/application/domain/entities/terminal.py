@@ -25,19 +25,19 @@ class Terminal(BaseModel):
         return name + "|" + self.terminal_id.hex[-12:]
 
     @property
-    def expiration(self):
+    def expiration(self) -> Optional[datetime]:
         if self.expire_at is not None:
             return self.expire_at
         if self.customer_type == CustomerType.BRONZE:
             return self.registered_at + timedelta(seconds=DEFAULT_LIFETIME)
 
     @property
-    def terminal_brand(self):
+    def terminal_brand(self) -> int:
         result = TerminalBrand.UNKNOWN.value
         if self.broker != "":
-            if ": mt4" in self.broker:
+            if ": mt4" in self.broker.lower():
                 result = TerminalBrand.METATRADER4.value
-            elif ": mt5" in self.broker:
+            elif ": mt5" in self.broker.lower():
                 result = TerminalBrand.METATRADER5.value
 
         return result

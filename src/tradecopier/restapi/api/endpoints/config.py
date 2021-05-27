@@ -87,7 +87,7 @@ def add_route(
         return
 
 
-@router.delete("/route/{route_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/route/{route_id}", status_code=status.HTTP_200_OK)
 @inject
 def delete_route(
     route_id: RouteId,
@@ -107,12 +107,12 @@ def delete_route(
             elif route_status == RouteStatus.BOTH:
                 route.status = RouteStatus.DESTINATION
                 route_repo.save(route)
-        elif terminal.terminal_id == str(route.destination.terminal_id):
+        elif terminal.terminal_id == route.destination.terminal_id:
             if route_status == RouteStatus.DESTINATION:
                 route_repo.delete(route_id)
             elif route_status == RouteStatus.BOTH:
                 route.status = RouteStatus.SOURCE
                 route_repo.save(route)
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return Response(status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)

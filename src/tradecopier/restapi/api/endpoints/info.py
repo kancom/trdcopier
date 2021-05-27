@@ -14,7 +14,7 @@ from tradecopier.application.domain.value_objects import (
 from tradecopier.restapi.deps import Container
 from tradecopier.restapi.dto.objects import (PeerTerminalId, PermittedRules,
                                              RoutePeer, RoutesPresenter,
-                                             RuleDTO, Rules)
+                                             RuleDTO, Rules, TerminalDTO)
 
 from .auth import get_current_active_terminal
 
@@ -86,12 +86,12 @@ def peer_terminal(
     return peer_terminal.str_id
 
 
-@router.get("/terminal", response_model=Terminal)
+@router.get("/terminal", response_model=TerminalDTO)
 @inject
 def current_terminal(
     terminal: Terminal = Depends(get_current_active_terminal),
 ):
-    return terminal
+    return TerminalDTO(**terminal.dict(), terminal_brand=int(terminal.terminal_brand))
 
 
 @router.get("/routes", response_model=RoutesPresenter)
