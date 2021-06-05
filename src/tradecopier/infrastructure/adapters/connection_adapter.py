@@ -1,5 +1,6 @@
 import asyncio
 import json
+from logging import exception
 from typing import Dict, Iterable, List, Tuple, Union
 
 import websockets as ws
@@ -56,14 +57,16 @@ class WebSocketsConnectionAdapter(ConnectionHandlerAdapter):
                                 and inc_message.message.terminal_id == terminal_id
                             ):
                                 await in_ws.send(json.dumps(out_message.dict()))
+                                logger.debug("is that used?")
                             elif out_ws is not None:
                                 await out_ws.send(json.dumps(out_message.dict()))
                     self._register_ws(inc_message.message.terminal_id, in_ws)
                 except ws.exceptions.ConnectionClosedError as e:
+                    logger.error(f"exception {e}")
                     try:
-                        del self._ws_register[str(inc_message.message.terminal_id)]
+                        del self._ws_register[str(terminal_id)]
                     finally:
-                        raise Exception(str(e)) from e
+                        raise
 
         return consumer_handler
 

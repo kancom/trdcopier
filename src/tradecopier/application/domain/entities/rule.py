@@ -3,6 +3,7 @@ import operator
 from decimal import Decimal
 from typing import Generator, List, Optional, Union
 
+from loguru import logger
 from pydantic import BaseModel, validator
 from tradecopier.application.domain.entities.message import InTradeMessage
 from tradecopier.application.domain.entities.order import Order
@@ -65,7 +66,6 @@ class TransformRule(Rule):
             return None
         return self._expr.value
 
-
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
         if (
             self._expr.operator == TransformOperation.APPEND
@@ -87,26 +87,36 @@ class TransformRule(Rule):
                 OrderType.ORDER_TYPE_BUY_STOP_LIMIT,
                 OrderType.ORDER_TYPE_SELL_STOP_LIMIT,
             ):
-                raise NotImplementedError(f"Order type {order_type} is not supported")
+                logger.debug(f"Order type {order_type} is not supported")
             sl = message.body.sl
             tp = message.body.tp
+            sl_points = message.body.sl_points
+            tp_points = message.body.tp_points
             price = message.body.price
+            if sl is not None and sl_points is None:
+                raise ValueError(f"slL{sl}, but sl_points is None")
+            if tp is not None and tp_points is None:
+                raise ValueError(f"tp {tp}, but tp_points is None")
             if order_type in (
                 OrderType.ORDER_TYPE_BUY,
                 OrderType.ORDER_TYPE_BUY_LIMIT,
                 OrderType.ORDER_TYPE_BUY_STOP,
             ):
                 order_type = OrderType(int(order_type) + 1)  # buy -> sell
-                if sl is not None and sl > 0:
-                    sl = price + (price - sl)
-                if tp is not None and tp > 0:
-                    tp = price - (tp - price)
+                if sl is not None and sl_points is not None:
+                    price = price if price != 0 else sl + sl_points
+                    sl = price + sl_points
+                if tp is not None and tp_points is not None:
+                    price = price if price != 0 else tp - tp_points
+                    tp = price - tp_points
             else:  # sell -> buy
                 order_type = OrderType(int(order_type) - 1)
-                if sl is not None and sl > 0:
-                    sl = price - (sl - price)
-                if tp is not None and tp > 0:
-                    tp = price + (price - tp)
+                if sl is not None and sl_points is not None:
+                    price = price if price != 0 else sl - sl_points
+                    sl = price - sl_points
+                if tp is not None and tp_points is not None:
+                    price = price if price != 0 else tp + tp_points
+                    tp = price + tp_points
             message.body.sl = sl
             message.body.tp = tp
             message.body.order_type = order_type

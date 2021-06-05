@@ -25,8 +25,12 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
     te = Expression(field="", value="", operator=TransformOperation.REVERSE)
     tr = TransformRule(terminal.terminal_id, te)
     msg = trade_message_factory()
-    msg.body.sl = msg.body.price - 3
-    msg.body.tp = msg.body.price + 5
+    sl_points = 3
+    tp_points = 5
+    msg.body.sl_points = sl_points
+    msg.body.tp_points = tp_points
+    msg.body.sl = msg.body.price - sl_points
+    msg.body.tp = msg.body.price + tp_points
     assert msg.body.tp > msg.body.price > msg.body.sl
     transformed_msg = tr.apply(msg)
     assert (
@@ -36,6 +40,7 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
     assert tr.applies_to == "not yet initialized"
     assert tr.operator is TransformOperation.REVERSE
     assert tr.value is None
+    assert transformed_msg.body.sl - transformed_msg.body.price == sl_points
 
 
 def test_transform_append(trade_message_factory, terminal_factory):

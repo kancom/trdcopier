@@ -36,22 +36,21 @@ class Order(BaseModel):
         description="The price value, at which the Limit pending order will be placed, when price reaches the price value (this condition is obligatory). Until then the pending order is not placed.",
     )
     sl: Optional[float] = Field(
-        ge=0, description="Stop Loss price in case of the unfavorable price movement"
+        description="Stop Loss price in case of the unfavorable price movement. Absolute value."
     )
-    sl_percent: Optional[float] = Field(
-        ge=0, le=100, description="Same as sl, but expressed in percents of deposit"
+    sl_points: Optional[float] = Field(
+        le=100, description="Same as sl, but expressed as offset in points"
     )
     tp: Optional[float] = Field(
-        ge=0,
-        description="Take Profit price in the case of the favorable price movement",
+        description="Take Profit price in the case of the favorable price movement. Absolute value.",
     )
-    tp_percent: Optional[float] = Field(
-        ge=0, le=100, description="Same as tp, but expressed in percents of deposit"
+    tp_points: Optional[float] = Field(
+        le=100, description="Same as tp, but expressed as offset in points"
     )
     deviation: Optional[int] = Field(
         ge=0, description="The maximal price deviation, specified in points"
     )
-    order_type: OrderType = Field(
+    order_type: Optional[OrderType] = Field(
         description="Order type. Can be one of the ENUM_ORDER_TYPE enumeration values."
     )
     order_type_filling: Optional[OrderTypeFilling] = Field(
