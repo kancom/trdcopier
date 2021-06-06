@@ -5,7 +5,8 @@ from uuid import UUID
 from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.entities.terminal import Terminal
 from tradecopier.application.domain.value_objects import (RouteStatus,
-                                                          TerminalIdLen)
+                                                          TerminalIdLen,
+                                                          TerminalType)
 from tradecopier.application.repositories.route_repo import RouteRepo
 from tradecopier.application.repositories.terminal_repo import TerminalRepo
 
@@ -24,7 +25,7 @@ class AddingRouteUseCase:
         *,
         route_repo: RouteRepo,
         terminal_repo: TerminalRepo,
-        boundary: AddingRouteBoundary
+        boundary: AddingRouteBoundary,
     ):
 
         self._route_repo = route_repo
@@ -37,14 +38,14 @@ class AddingRouteUseCase:
             src_is_tail = False
             dst_terminal_id = None
             dst_is_tail = False
-            if len(source) == TerminalIdLen:
-                try:
-                    src_terminal_id = UUID(source)
-                except:
-                    pass
-            elif len(source) == 12:
-                src_is_tail = True
             try:
+                if len(source) == TerminalIdLen:
+                    try:
+                        src_terminal_id = UUID(source)
+                    except:
+                        raise ValueError(f"Can't interpret src:{source} as UUID")
+                elif len(source) == 12:
+                    src_is_tail = True
                 assert (
                     src_is_tail or src_terminal_id is not None
                 ), "incorrectly formed source"
@@ -52,7 +53,7 @@ class AddingRouteUseCase:
                     try:
                         dst_terminal_id = UUID(destination)
                     except:
-                        pass
+                        raise ValueError(f"Can't interpret dst:{destination} as UUID")
                 elif len(destination) == 12:
                     dst_is_tail = True
                 assert (
@@ -61,13 +62,13 @@ class AddingRouteUseCase:
                 assert (
                     src_terminal_id is not None or dst_terminal_id is not None
                 ), "both terminals are passed as tail"
-            except AssertionError as e:
+            except Exception as e:
                 self._boundary.present({"error": str(e)})
                 continue
 
             source_terminal: Optional[Terminal] = None
             destination_terminal: Optional[Terminal] = None
-            route_status: RouteStatus
+            route_status: Optional[RouteStatus] = None
             if src_is_tail:
                 source_terminal = self._terminal_repo.get_by_tail(source)
                 route_status = RouteStatus.DESTINATION
@@ -82,13 +83,31 @@ class AddingRouteUseCase:
                 route_status = RouteStatus.BOTH
 
             if source_terminal is None or destination_terminal is None:
-                self._boundary.present(
-                    {"error": _("Source or Destination wasn't found")}
-                )
+                self._boundary.present({"error": "Source or Destination wasn't found"})
                 continue
-            route = Route(
-                source=source_terminal,
-                destination=destination_terminal,
-                status=route_status,
+            src_routes = self._route_repo.get_by_terminal_id(
+                destination_terminal.terminal_id, term_type=TerminalType.SOURCE
             )
+            dst_routes = self._route_repo.get_by_terminal_id(
+                source_terminal.terminal_id, term_type=TerminalType.DESTINATION
+            )
+            try:
+                assert (
+                    len(src_routes) == 0
+                ), f"{destination_terminal.str_id} has type SOURCE and can't be used as destination"
+                assert (
+                    len(dst_routes) == 0
+                ), f"{source_terminal.str_id} has type DESTINATION and can't be used as source"
+                assert (
+                    source_terminal.terminal_id != destination_terminal.terminal_id
+                ), "The same terminal can't be used as both src and dst"
+                assert route_status is not None, "Can't identify route status"
+                route = Route(
+                    source=source_terminal,
+                    destination=destination_terminal,
+                    status=route_status,
+                )
+            except Exception as e:
+                self._boundary.present({"error": str(e)})
+                continue
             self._route_repo.save(route)

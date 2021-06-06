@@ -1,3 +1,5 @@
+import math
+
 import pydantic
 import pytest
 from pydantic import ValidationError
@@ -41,6 +43,11 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
     assert tr.operator is TransformOperation.REVERSE
     assert tr.value is None
     assert transformed_msg.body.sl - transformed_msg.body.price == sl_points
+
+    price = msg.body.price
+    msg.body.price = 0
+    transformed_msg = tr.apply(msg)
+    assert math.isclose(price - transformed_msg.body.sl, sl_points)
 
 
 def test_transform_append(trade_message_factory, terminal_factory):

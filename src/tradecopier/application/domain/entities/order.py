@@ -19,7 +19,6 @@ class Order(BaseModel):
         ge=0,
         description="Expert Advisor ID. It allows organizing analytical processing of trade orders. Each Expert Advisor can set its own unique ID when sending a trade request.",
     )
-    # order_ticket: int = Field(ge=0, description='Order ticket. It is used for modifying pending orders.')
     volume: float = Field(
         ge=0,
         description="Requested order volume in lots. Note that the real volume of a deal will depend on the order execution type.",
@@ -75,7 +74,8 @@ class Order(BaseModel):
     def get_field_type_mapping(cls) -> Dict[str, str]:
         result = {}
         schema = cls.schema()
-        for k, v in schema["properties"].items():
+        alt_schema = {k: v for k, v in schema["properties"].items() if k != "magic"}
+        for k, v in alt_schema.items():
             if "type" in v:
                 if v["type"] == "number":
                     result[k] = "float"

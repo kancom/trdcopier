@@ -62,4 +62,7 @@ class Terminal(BaseModel):
         return True
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.id}): {self.name} active: {self.is_active}"
+        return (
+            f"{self.__class__.__name__}({self.terminal_id}):"
+            f" {self.name} active: {self.is_active}"
+        )

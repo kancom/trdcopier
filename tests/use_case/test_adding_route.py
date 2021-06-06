@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 
-import factories
 import pytest
-from tradecopier.application.domain.value_objects import RouteStatus
+from tradecopier.application.domain.value_objects import (CustomerType,
+                                                          RouteStatus)
 from tradecopier.application.use_case.adding_route import AddingRouteUseCase
 
 
@@ -48,12 +48,10 @@ def test_improper_uuids(
     )
     sources = [get_uuid_tail]
     destinations = [get_uuid_tail]
-    # with pytest.raises(AssertionError, match="both terminals are passed as tail"):
     uc.execute(sources=sources, destinations=destinations)
     assert ar_bound.present.called_with({"error": "both terminals are passed as tail"})
 
     sources = [get_uuid[2:]]
-    # with pytest.raises(AssertionError, match="incorrectly formed source"):
     uc.execute(sources=sources, destinations=destinations)
     assert ar_bound.present.called_with({"error": "incorrectly formed source"})
 
@@ -73,3 +71,57 @@ def test_route_status(
         route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
     )
     uc.execute(sources=sources, destinations=destinations)
+
+
+def test_same_uuids(
+    mocker, get_uuid, get_uuid_tail, term_repo, route_repo, terminal_factory
+):
+    sources = [get_uuid]
+    destinations = [get_uuid]
+    ar_bound = mocker.MagicMock()
+    uc = AddingRouteUseCase(
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
+    )
+    uc.execute(sources=sources, destinations=destinations)
+    assert ar_bound.present.called_with(
+        {"error": "The same terminal can't be used as both src and dst"}
+    )
+
+
+def test_both_full_uuids(mocker, term_repo, route_repo, terminal_factory):
+    def get(terminals):
+        def wrapped(term_id):
+            return [t for t in terminals if t.terminal_id == term_id][0]
+
+        return wrapped
+
+    terminals = terminal_factory.build_batch(2, customer_type=CustomerType.GOLD)
+    term_repo.get.side_effect = get(terminals)
+    ar_bound = mocker.MagicMock()
+    uc = AddingRouteUseCase(
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
+    )
+    sources = [str(terminals[0].terminal_id)]
+    destinations = [str(terminals[1].terminal_id)]
+    uc.execute(sources=sources, destinations=destinations)
+    assert not ar_bound.present.called
+
+
+def test_one_full_uuids(mocker, term_repo, route_repo, terminal_factory):
+    def get(terminals):
+        def wrapped(term_id):
+            return [t for t in terminals if str(term_id) in str(t.terminal_id)][0]
+
+        return wrapped
+
+    terminals = terminal_factory.build_batch(2, customer_type=CustomerType.GOLD)
+    term_repo.get.side_effect = get(terminals)
+    term_repo.get_by_tail.side_effect = get(terminals)
+    ar_bound = mocker.MagicMock()
+    uc = AddingRouteUseCase(
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
+    )
+    sources = [str(terminals[0].terminal_id)]
+    destinations = [str(terminals[1].terminal_id)[-12:]]
+    uc.execute(sources=sources, destinations=destinations)
+    assert not ar_bound.present.called

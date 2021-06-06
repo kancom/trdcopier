@@ -2,15 +2,13 @@ import itertools
 from uuid import uuid4
 
 import factories
-import pytest
 from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.entities.rule import (ComplexRule,
                                                           Expression,
                                                           FilterRule,
                                                           TransformRule)
 from tradecopier.application.domain.value_objects import (
-    CustomerType, EntityNotFoundException, RouteStatus, TerminalType,
-    TransformOperation)
+    CustomerType, RouteStatus, TerminalType, TransformOperation)
 from tradecopier.infrastructure.repositories.route_repo import \
     SqlAlchemyRouteRepo
 from tradecopier.infrastructure.repositories.rule_repo import \

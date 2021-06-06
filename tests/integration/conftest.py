@@ -9,7 +9,7 @@ from tradecopier.infrastructure.repositories.sql_model import (RouteModel,
 
 @pytest.fixture(scope="session")
 def sql_conn():
-    engine = create_engine("sqlite:///testdb.db", echo=True)
+    engine = create_engine("sqlite:///testdb.db", echo=False)
     db_conn = engine.connect()
     yield db_conn
 
