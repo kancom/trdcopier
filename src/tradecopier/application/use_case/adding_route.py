@@ -97,7 +97,8 @@ class AddingRouteUseCase:
                 source_terminal.terminal_id, term_type=TerminalType.SOURCE
             )
             if (
-                source_terminal.customer_type == CustomerType.BRONZE
+                source_terminal.customer_type
+                in (CustomerType.BRONZE, CustomerType.SILVER)
                 and len(existing_src_route) >= 5
             ):
                 self._boundary.present({"error": "Too many routes"})
@@ -116,7 +117,8 @@ class AddingRouteUseCase:
                 destination_terminal.terminal_id, term_type=TerminalType.DESTINATION
             )
             if (
-                destination_terminal.customer_type == CustomerType.BRONZE
+                destination_terminal.customer_type
+                in (CustomerType.BRONZE, CustomerType.SILVER)
                 and len(existing_dst_route) >= 5
             ):
                 self._boundary.present({"error": "Too many routes"})

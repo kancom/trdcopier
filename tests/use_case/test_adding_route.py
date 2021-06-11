@@ -128,7 +128,18 @@ def test_one_full_uuids(mocker, term_repo, route_repo, terminal_factory):
     assert not ar_bound.present.called
 
 
-def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory):
+@pytest.mark.parametrize(
+    "ct,msg",
+    (
+        (CustomerType.BRONZE, "Too many routes"),
+        (CustomerType.SILVER, "Too many routes"),
+        (
+            CustomerType.GOLD,
+            "test_name|d4258bbc0013 has type SOURCE and can't be used as destination",
+        ),
+    ),
+)
+def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory, ct, msg):
     def get(terminals):
         def wrapped(term_id):
             return [t for t in terminals if t.terminal_id == term_id][0]
@@ -136,7 +147,7 @@ def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory):
         return wrapped
 
     terminals = terminal_factory.build_batch(
-        6, customer_type=CustomerType.BRONZE, registered_at=datetime.utcnow()
+        6, customer_type=ct, registered_at=datetime.utcnow(), name="test_name"
     )
     term_repo.get.side_effect = get(terminals)
     ar_bound = mocker.MagicMock()
@@ -155,5 +166,6 @@ def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory):
         )
     destinations = [str(terminals[1].terminal_id)]
     route_repo.get_by_terminal_id.return_value = routes
+
     uc.execute(sources=sources, destinations=destinations)
-    ar_bound.present.assert_called_with({"error": "Too many routes"})
+    ar_bound.present.assert_called_with({"error": msg})
