@@ -23,6 +23,22 @@ register_factory(factories.RuleExpressionFactory)
 
 
 @pytest.fixture
+def wsca(mocker):
+    return mocker.patch(
+        "tradecopier.infrastructure.adapters.connection_adapter.WebSocketsConnectionAdapter",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def recv_msg_bnd(mocker):
+    return mocker.patch(
+        "tradecopier.infrastructure.adapters.connection_adapter.ReceivingMessagePresenter",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 def terminals():
     terminals = factories.TerminalFactory.create_batch(5)
     yield terminals

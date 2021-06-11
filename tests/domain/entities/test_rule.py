@@ -42,7 +42,7 @@ def test_transform_reverse(trade_message_factory, terminal_factory):
     assert tr.applies_to == "not yet initialized"
     assert tr.operator is TransformOperation.REVERSE
     assert tr.value is None
-    assert transformed_msg.body.sl - transformed_msg.body.price == sl_points
+    assert math.isclose(transformed_msg.body.sl - transformed_msg.body.price, sl_points)
 
     price = msg.body.price
     msg.body.price = 0

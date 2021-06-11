@@ -104,7 +104,7 @@ type_transform_operation_map = {
     TransformOperation.ADD: ["int", "float"],
     TransformOperation.APPEND: ["str"],
     TransformOperation.REVERSE: [],
-    # TransformOperation.SETIF:
+    # TransformOperation.SETIF: [],
 }
 
 

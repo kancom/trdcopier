@@ -31,7 +31,7 @@ class Expression(BaseModel):
 class Rule:
     terminal_id: TerminalId
 
-    def __init__(self, terminal_id: TerminalId, expr: Expression):
+    def __init__(self, terminal_id: TerminalId, expr: Optional[Expression]):
         self.terminal_id = terminal_id
         self._expr = expr
 
@@ -67,18 +67,33 @@ class TransformRule(Rule):
         return self._expr.value
 
     def apply(self, message: InTradeMessage) -> Optional[InTradeMessage]:
-        if (
-            self._expr.operator == TransformOperation.APPEND
-            and self._expr.field is not None
-        ):
-            field_value = getattr(message.body, self._expr.field)
-            field_value = (
-                field_value + self._expr.value
-                if field_value is not None
-                else self._expr.value
-            )
-            setattr(message.body, self._expr.field, field_value)
-            return message
+        if self._expr.field is not None:
+            if self._expr.operator in (
+                TransformOperation.ADD,
+                TransformOperation.APPEND,
+            ):
+                field_value = getattr(message.body, self._expr.field)
+                field_value = (
+                    field_value + self._expr.value
+                    if field_value is not None
+                    else self._expr.value
+                )
+                setattr(message.body, self._expr.field, field_value)
+                return message
+            elif self._expr.operator == TransformOperation.MULTIPLY:
+                field_value = getattr(message.body, self._expr.field)
+                field_value = (
+                    field_value * self._expr.value
+                    if field_value is not None
+                    else self._expr.value
+                )
+                setattr(message.body, self._expr.field, field_value)
+                return message
+            elif self._expr.operator == TransformOperation.SET:
+                field_value = getattr(message.body, self._expr.field)
+                field_value = self._expr.value
+                setattr(message.body, self._expr.field, field_value)
+                return message
 
         if self._expr.operator == TransformOperation.REVERSE:
             order_type = message.body.order_type
@@ -103,18 +118,18 @@ class TransformRule(Rule):
                 OrderType.ORDER_TYPE_BUY_STOP,
             ):
                 order_type = OrderType(int(order_type) + 1)  # buy -> sell
-                if sl is not None and sl_points is not None:
+                if sl != 0 and sl_points is not None:
                     price = price if price != 0 else sl + sl_points
                     sl = price + sl_points
-                if tp is not None and tp_points is not None:
+                if tp != 0 and tp_points is not None:
                     price = price if price != 0 else tp - tp_points
                     tp = price - tp_points
             else:  # sell -> buy
                 order_type = OrderType(int(order_type) - 1)
-                if sl is not None and sl_points is not None:
+                if sl != 0 and sl_points is not None:
                     price = price if price != 0 else sl - sl_points
                     sl = price - sl_points
-                if tp is not None and tp_points is not None:
+                if tp != 0 and tp_points is not None:
                     price = price if price != 0 else tp + tp_points
                     tp = price + tp_points
             message.body.sl = sl
@@ -195,8 +210,8 @@ class FilterRule(Rule):
         return message if filter_result else None
 
     @property
-    def is_valid(self):
-        return FilterRule.examine(self._expr)
+    def is_valid(self) -> bool:
+        return FilterRule.examine(self._expr) if self._expr is not None else True
 
 
 FinalRule = Union[FilterRule, TransformRule]

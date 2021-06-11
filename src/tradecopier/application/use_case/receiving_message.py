@@ -1,4 +1,5 @@
 import abc
+import copy
 from collections import defaultdict
 from typing import Iterable, List, Tuple
 
@@ -10,7 +11,8 @@ from tradecopier.application.domain.entities.message import (
     RegisterMessage)
 from tradecopier.application.domain.entities.terminal import Terminal
 from tradecopier.application.domain.value_objects import (
-    CustomerType, EntityNotFoundException, TerminalId, TerminalType)
+    CustomerType, EntityNotFoundException, RouteStatus, TerminalId,
+    TerminalType)
 from tradecopier.application.repositories.route_repo import RouteRepo
 from tradecopier.application.repositories.rule_repo import RuleRepo
 from tradecopier.application.repositories.terminal_repo import TerminalRepo
@@ -57,9 +59,12 @@ class ReceivingMessageUseCase:
         src_terminal_id = message.terminal_id
         if terminal is None or not terminal.is_active:
             return
+
         routes = self._route_repo.get_by_terminal_id(
             src_terminal_id, term_type=TerminalType.SOURCE
         )
+        routes = [r for r in routes if r.status == RouteStatus.BOTH]
+
         if (src_rule := self._rule_repo.get(src_terminal_id)) is None:
             raise EntityNotFoundException(
                 f"rule for terminal {src_terminal_id} not found"
@@ -71,18 +76,19 @@ class ReceivingMessageUseCase:
             [route.destination for route in routes if route.destination.is_active]
         )
         out_msgs = defaultdict(set)
+        src_msg_copy = copy.deepcopy(src_msg)
         for dst_terminal in destinations:
             if not self._conn_adapter.is_connected(dst_terminal.terminal_id):
                 continue
             dst_rule = self._rule_repo.get(dst_terminal.terminal_id)
             if not dst_rule:
                 continue
-            dst_msg = dst_rule.apply(src_msg)
+            dst_msg = dst_rule.apply(src_msg_copy)
             if dst_msg is not None:
                 msg = OutgoingMessage(message=dst_msg)
                 out_msgs[msg].add(dst_terminal.terminal_id)
             else:
-                logger.debug("rules empty for dst")
+                logger.debug("message empty for dst")
         self._out_bound.present([(v, k) for k, v in out_msgs.items()])
 
     def execute(self, message: IncomingMessage):

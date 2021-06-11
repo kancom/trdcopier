@@ -3,18 +3,11 @@ from uuid import uuid1
 
 import factories
 import pytest
+from tradecopier.application.domain.entities.rule import Rule
 from tradecopier.application.domain.value_objects import (
-    CustomerType, EntityNotFoundException)
+    CustomerType, EntityNotFoundException, RouteId, RouteStatus)
 from tradecopier.application.use_case.receiving_message import \
     ReceivingMessageUseCase
-
-
-@pytest.fixture
-def wsca(mocker):
-    return mocker.patch(
-        "tradecopier.infrastructure.adapters.connection_adapter.WebSocketsConnectionAdapter",
-        autospec=True,
-    )
 
 
 @pytest.fixture
@@ -37,14 +30,6 @@ def term_repo(mocker):
 def rule_repo(mocker):
     return mocker.patch(
         "tradecopier.infrastructure.repositories.rule_repo.SqlAlchemyRuleRepo",
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def recv_msg_bnd(mocker):
-    return mocker.patch(
-        "tradecopier.infrastructure.adapters.connection_adapter.ReceivingMessagePresenter",
         autospec=True,
     )
 
@@ -107,6 +92,7 @@ def test_receiving_message_non_register_on_new(
     ensure that ask registration message sent upon receive of
     non registration message for new connection
     """
+    term_repo.get.return_value = None
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
         route_repo=route_repo,
@@ -157,25 +143,18 @@ def test_resceiving_trade_msg_no_rules(
         uc.execute(trd_msg)
 
 
-@pytest.mark.skip("looks excessive now")
-def test_resceiving_trade_msg_with_rules(
+def test_resceiving_trade_msg_one_way_confirmed(
     wsca, route_repo, term_repo, rule_repo, recv_msg_bnd
 ):
-    """
-    test if src terminal != customer->source teminal found by account id
-    then if equals - proceed
-    """
-    customer = factories.RouteFactory(customer_type=CustomerType.SILVER)
-    dst_term = factories.TerminalFactory()
-    src_term = factories.TerminalFactory()
-    src_term.id = uuid1()
-    customer.add_destination(dst_term)
-    customer.add_source(src_term)
+    route = factories.RouteFactory(status=RouteStatus.SOURCE)
+    src_term = factories.TerminalFactory(customer_type=CustomerType.SILVER)
+
     trd_msg = factories.OrdIncomingMessageFactory()
     trd_msg.message = factories.TradeMessageFactory()
 
-    wsca.is_connected.return_value = False
-    rule_repo.get_by_terminal_id.return_value = factories.RuleFactory()
+    wsca.is_connected.return_value = True
+    route_repo.get_by_terminal_id.return_value = [route]
+    rule_repo.get.return_value = Rule(src_term.terminal_id, None)
 
     uc = ReceivingMessageUseCase(
         conn_handler=wsca,
@@ -184,14 +163,11 @@ def test_resceiving_trade_msg_with_rules(
         rule_repo=rule_repo,
         outboundary=recv_msg_bnd,
     )
+    term_repo.get.return_value = src_term
     uc.execute(trd_msg)
-    rule_repo.get_by_terminal_id.assert_not_called()
+    recv_msg_bnd.present.assert_called_with([])
 
-    customer.remove_source(src_term)
-    src_term = factories.TerminalFactory()
-    src_term.id = trd_msg.message.terminal_id
-    customer.add_source(src_term)
+    route = factories.RouteFactory(status=RouteStatus.DESTINATION)
+    route_repo.get_by_terminal_id.return_value = [route]
     uc.execute(trd_msg)
-    rule_repo.get_by.assert_called()
-    wsca.send_message.assert_called()
-    rule_repo.get.return_value = None
+    recv_msg_bnd.present.assert_called_with([])

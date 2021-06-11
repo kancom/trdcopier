@@ -4,7 +4,8 @@ from uuid import UUID
 
 from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.entities.terminal import Terminal
-from tradecopier.application.domain.value_objects import (RouteStatus,
+from tradecopier.application.domain.value_objects import (CustomerType,
+                                                          RouteStatus,
                                                           TerminalIdLen,
                                                           TerminalType)
 from tradecopier.application.repositories.route_repo import RouteRepo
@@ -91,6 +92,44 @@ class AddingRouteUseCase:
             dst_routes = self._route_repo.get_by_terminal_id(
                 source_terminal.terminal_id, term_type=TerminalType.DESTINATION
             )
+
+            existing_src_route = self._route_repo.get_by_terminal_id(
+                source_terminal.terminal_id, term_type=TerminalType.SOURCE
+            )
+            if (
+                source_terminal.customer_type == CustomerType.BRONZE
+                and len(existing_src_route) >= 5
+            ):
+                self._boundary.present({"error": "Too many routes"})
+                continue
+
+            existing_src_route = [
+                r for r in existing_src_route if r.destination == destination_terminal
+            ]
+            if (
+                len(existing_src_route) > 0
+                and route_status == RouteStatus.DESTINATION
+                and existing_src_route[0].status == RouteStatus.SOURCE
+            ):
+                route_status = RouteStatus.BOTH
+            existing_dst_route = self._route_repo.get_by_terminal_id(
+                destination_terminal.terminal_id, term_type=TerminalType.DESTINATION
+            )
+            if (
+                destination_terminal.customer_type == CustomerType.BRONZE
+                and len(existing_dst_route) >= 5
+            ):
+                self._boundary.present({"error": "Too many routes"})
+                continue
+            existing_dst_route = [
+                r for r in existing_dst_route if r.source == source_terminal
+            ]
+            if (
+                len(existing_dst_route) > 0
+                and route_status == RouteStatus.SOURCE
+                and existing_src_route[0].status == RouteStatus.DESTINATION
+            ):
+                route_status = RouteStatus.BOTH
             try:
                 assert (
                     len(src_routes) == 0

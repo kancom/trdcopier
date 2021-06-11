@@ -1,5 +1,6 @@
 from typing import List
 
+from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import NoResultFound
@@ -39,7 +40,6 @@ class SqlAlchemyRouteRepo(RouteRepo):
         ).one_or_none()
         if db_route_row is None:
             raise EntityNotFoundException(f"{route_id} not found")
-        # db_route_rows = [r for r in db_route_rows_iter]
         source = self._conn.execute(
             TerminalModel.select(
                 whereclause=TerminalModel.c.terminal_id == db_route_row.src_terminal_id

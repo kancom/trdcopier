@@ -45,8 +45,6 @@ def add_route(
         Provide(Container.adding_route_presenter)
     ),
 ):
-    source = str(route_endpoints.source)
-    destination = str(route_endpoints.destination)
     term_type = TerminalType.UNKNOWN
     src_routes = route_repo.get_by_terminal_id(
         terminal.terminal_id, term_type=TerminalType.SOURCE
@@ -58,6 +56,9 @@ def add_route(
         term_type = TerminalType.DESTINATION
     elif len(src_routes) > 0:
         term_type = TerminalType.SOURCE
+
+    source = str(route_endpoints.source)
+    destination = str(route_endpoints.destination)
 
     if term_type == TerminalType.UNKNOWN and (
         source is not None and destination is not None
@@ -71,6 +72,7 @@ def add_route(
                     detail=outcome["error"],
                 )
             return
+
     if term_type == TerminalType.SOURCE:
         source = str(terminal.terminal_id)
     elif term_type == TerminalType.DESTINATION:

@@ -7,7 +7,7 @@ from tradecopier.application.domain.value_objects import (CustomerType,
                                                           TerminalBrand,
                                                           TerminalId)
 
-DEFAULT_LIFETIME = 60 * 60 * 24 * 60  # 60 days
+DEFAULT_LIFETIME = 60 * 60 * 24 * 10  # 60 days
 
 
 class Terminal(BaseModel):

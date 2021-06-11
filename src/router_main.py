@@ -27,6 +27,7 @@ def get_db_connection():
     create_db(engine)
     logger.debug("db created")
     db_conn = engine.connect()
+    db_conn.execute("set session transaction ISOLATION LEVEL READ COMMITTED;")
     logger.debug("sql engine connected")
     return db_conn
 

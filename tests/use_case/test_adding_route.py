@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 import pytest
+from tradecopier.application.domain.entities.route import Route
 from tradecopier.application.domain.value_objects import (CustomerType,
                                                           RouteStatus)
 from tradecopier.application.use_case.adding_route import AddingRouteUseCase
@@ -49,11 +50,11 @@ def test_improper_uuids(
     sources = [get_uuid_tail]
     destinations = [get_uuid_tail]
     uc.execute(sources=sources, destinations=destinations)
-    assert ar_bound.present.called_with({"error": "both terminals are passed as tail"})
+    ar_bound.present.assert_called_with({"error": "both terminals are passed as tail"})
 
     sources = [get_uuid[2:]]
     uc.execute(sources=sources, destinations=destinations)
-    assert ar_bound.present.called_with({"error": "incorrectly formed source"})
+    ar_bound.present.assert_called_with({"error": "incorrectly formed source"})
 
 
 def test_route_status(
@@ -83,7 +84,7 @@ def test_same_uuids(
         route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
     )
     uc.execute(sources=sources, destinations=destinations)
-    assert ar_bound.present.called_with(
+    ar_bound.present.assert_called_with(
         {"error": "The same terminal can't be used as both src and dst"}
     )
 
@@ -125,3 +126,34 @@ def test_one_full_uuids(mocker, term_repo, route_repo, terminal_factory):
     destinations = [str(terminals[1].terminal_id)[-12:]]
     uc.execute(sources=sources, destinations=destinations)
     assert not ar_bound.present.called
+
+
+def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory):
+    def get(terminals):
+        def wrapped(term_id):
+            return [t for t in terminals if t.terminal_id == term_id][0]
+
+        return wrapped
+
+    terminals = terminal_factory.build_batch(
+        6, customer_type=CustomerType.BRONZE, registered_at=datetime.utcnow()
+    )
+    term_repo.get.side_effect = get(terminals)
+    ar_bound = mocker.MagicMock()
+    uc = AddingRouteUseCase(
+        route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
+    )
+    sources = [str(terminals[0].terminal_id)]
+    routes = []
+    for dst in terminals[1:]:
+        routes.append(
+            Route(
+                source=terminals[0],
+                destination=dst,
+                status=RouteStatus.BOTH,
+            )
+        )
+    destinations = [str(terminals[1].terminal_id)]
+    route_repo.get_by_terminal_id.return_value = routes
+    uc.execute(sources=sources, destinations=destinations)
+    ar_bound.present.assert_called_with({"error": "Too many routes"})
