@@ -58,7 +58,7 @@ class TerminalDTO(BaseModel):
 
 
 class RoutesPresenter(BaseModel):
-    current_terminal: Terminal
+    current_terminal: TerminalDTO
     peers_type: Literal["sources", "destinations"]
     peers: List[RoutePeer]
 

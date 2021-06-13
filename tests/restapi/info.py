@@ -18,3 +18,7 @@ def test_permitted_rules():
         enums=Order.get_enums(),
     )
     assert result is not None
+    assert "magic" not in result.fields
+    assert "position" not in result.fields
+    assert "position_by" not in result.fields
+    assert result.fields["expiration"] == "float"

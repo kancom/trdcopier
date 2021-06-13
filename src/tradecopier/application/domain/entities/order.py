@@ -73,10 +73,15 @@ class Order(BaseModel):
     @classmethod
     def get_field_type_mapping(cls) -> Dict[str, str]:
         result = {}
+        to_exclude = ("magic", "position", "position_by")
         schema = cls.schema()
-        alt_schema = {k: v for k, v in schema["properties"].items() if k != "magic"}
+        alt_schema = {
+            k: v for k, v in schema["properties"].items() if k not in to_exclude
+        }
         for k, v in alt_schema.items():
-            if "type" in v:
+            if k == "expiration":
+                result[k] = "datetime"
+            elif "type" in v:
                 if v["type"] == "number":
                     result[k] = "float"
                 else:

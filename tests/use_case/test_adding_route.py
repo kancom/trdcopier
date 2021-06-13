@@ -135,7 +135,7 @@ def test_one_full_uuids(mocker, term_repo, route_repo, terminal_factory):
         (CustomerType.SILVER, "Too many routes"),
         (
             CustomerType.GOLD,
-            "test_name|d4258bbc0013 has type SOURCE and can't be used as destination",
+            "has type SOURCE and can't be used as destination",
         ),
     ),
 )
@@ -146,11 +146,15 @@ def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory, ct,
 
         return wrapped
 
+    def present(err_msg):
+        assert msg in err_msg["error"]
+
     terminals = terminal_factory.build_batch(
         6, customer_type=ct, registered_at=datetime.utcnow(), name="test_name"
     )
     term_repo.get.side_effect = get(terminals)
     ar_bound = mocker.MagicMock()
+    ar_bound.present.side_effect = present
     uc = AddingRouteUseCase(
         route_repo=route_repo, terminal_repo=term_repo, boundary=ar_bound
     )
@@ -168,4 +172,3 @@ def test_more_than_5_routes(mocker, term_repo, route_repo, terminal_factory, ct,
     route_repo.get_by_terminal_id.return_value = routes
 
     uc.execute(sources=sources, destinations=destinations)
-    ar_bound.present.assert_called_with({"error": msg})

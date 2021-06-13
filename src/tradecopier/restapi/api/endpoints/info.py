@@ -131,7 +131,9 @@ def routes(
         )
         peers.append(peer)
     presenter = RoutesPresenter(
-        current_terminal=terminal,
+        current_terminal=TerminalDTO(
+            **terminal.dict(), terminal_brand=int(terminal.terminal_brand)
+        ),
         peers_type="sources"
         if term_type == TerminalType.DESTINATION
         else "destinations",
