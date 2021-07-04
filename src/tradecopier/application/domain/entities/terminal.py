@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from tradecopier.application.domain.value_objects import (CustomerType,
                                                           TerminalBrand,
                                                           TerminalId)
@@ -15,7 +15,7 @@ class Terminal(BaseModel):
     broker: str
     name: Optional[str] = None
     expire_at: Optional[datetime]
-    registered_at: datetime = datetime.now()
+    registered_at: datetime = Field(default_factory=datetime.now)
     customer_type: CustomerType = CustomerType.BRONZE
     enabled: bool = True
 
